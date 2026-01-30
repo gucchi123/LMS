@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }} - LMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        body {
+            background-color: #000;
+        }
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        .video-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .video-js {
+            width: 100%;
+            height: 70vh;
+        }
+        .video-info {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-book"></i> LMS
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ session.username }}
+                </span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> ログアウト
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="video-container">
+        <div class="back-button">
+            <a href="/dashboard" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> ダッシュボードに戻る
+            </a>
+        </div>
+
+        <!-- Video Player -->
+        <video id="videoPlayer" class="video-js vjs-big-play-centered" controls preload="auto"
+               data-video-id="{{ video.id }}"
+               data-setup='{}'>
+            <source src="/videos/{{ video.filename }}" type="video/mp4">
+            お使いのブラウザは動画タグをサポートしていません。
+        </video>
+
+        <!-- Video Info -->
+        <div class="video-info">
+            <h2>{{ video.title }}</h2>
+            <p class="text-muted">
+                <i class="bi bi-calendar"></i> 
+                {{ video.created_at.split('.')[0] if '.' in video.created_at else video.created_at }}
+            </p>
+            {% if video.description %}
+            <hr>
+            <h5>概要</h5>
+            <p>{{ video.description }}</p>
+            {% endif %}
+            
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="bi bi-bar-chart"></i> 視聴進捗</h6>
+                    <div class="progress" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar" role="progressbar" 
+                             style="width: 0%; background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);">
+                            0%
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="bi bi-info-circle"></i> 視聴状態</h6>
+                    <p id="statusText" class="mb-0">未視聴</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script>
+        const videoId = {{ video.id }};
+        const lastPosition = {{ last_position }};
+        let progressSaveInterval;
+        
+        // Video.jsプレイヤーを初期化
+        const player = videojs('videoPlayer', {
+            controls: true,
+            autoplay: false,
+            preload: 'auto',
+            fluid: true,
+            responsive: true
+        });
+
+        // 前回の再生位置から開始
+        player.ready(function() {
+            if (lastPosition > 0) {
+                player.currentTime(lastPosition);
+                console.log('前回の位置から再生を開始:', lastPosition);
+            }
+            
+            // 5秒ごとに進捗を保存
+            progressSaveInterval = setInterval(saveProgress, 5000);
+        });
+
+        // 進捗を保存する関数
+        async function saveProgress() {
+            const currentTime = player.currentTime();
+            const duration = player.duration();
+            
+            if (duration > 0) {
+                const progressPercent = (currentTime / duration) * 100;
+                
+                // UIを更新
+                updateProgressUI(progressPercent);
+                
+                // サーバーに保存
+                try {
+                    await fetch('/api/progress', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            video_id: videoId,
+                            progress_percent: progressPercent,
+                            last_position: currentTime
+                        })
+                    });
+                    console.log('進捗を保存しました:', progressPercent.toFixed(1) + '%');
+                } catch (error) {
+                    console.error('進捗の保存に失敗しました:', error);
+                }
+            }
+        }
+
+        // 進捗UIを更新
+        function updateProgressUI(progressPercent) {
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            
+            progressBar.style.width = progressPercent + '%';
+            progressBar.textContent = Math.round(progressPercent) + '%';
+            
+            if (progressPercent >= 95) {
+                statusText.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> 完了</span>';
+            } else if (progressPercent > 0) {
+                statusText.innerHTML = '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> 視聴中 (' + Math.round(progressPercent) + '%)</span>';
+            } else {
+                statusText.textContent = '未視聴';
+            }
+        }
+
+        // 動画終了時にも保存
+        player.on('ended', function() {
+            saveProgress();
+            alert('動画の視聴が完了しました！');
+        });
+
+        // ページを離れる前に保存
+        window.addEventListener('beforeunload', function() {
+            saveProgress();
+            clearInterval(progressSaveInterval);
+        });
+
+        // 初期進捗を表示（既存の進捗がある場合）
+        if (lastPosition > 0) {
+            player.on('loadedmetadata', function() {
+                const duration = player.duration();
+                const progressPercent = (lastPosition / duration) * 100;
+                updateProgressUI(progressPercent);
+            });
+        }
+    </script>
+</body>
+</html>

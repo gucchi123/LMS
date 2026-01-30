@@ -1,0 +1,8 @@
+*.pyc
+__pycache__/
+*.db
+videos/*
+!videos/.gitkeep
+.env
+*.log
+.DS_Store
