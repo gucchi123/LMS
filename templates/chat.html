@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIアシスタント - LMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --chat-bg: #f8f9fa;
+            --user-msg-bg: #667eea;
+            --ai-msg-bg: #ffffff;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: rgba(255,255,255,0.1) !important;
+            backdrop-filter: blur(10px);
+        }
+        .chat-container {
+            max-width: 900px;
+            margin: 0 auto;
+            height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .chat-header h4 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .chat-header p {
+            margin: 5px 0 0 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--chat-bg);
+        }
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .message.user .message-avatar {
+            background: var(--user-msg-bg);
+            color: white;
+            margin-left: 10px;
+        }
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            margin-right: 10px;
+        }
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            line-height: 1.6;
+        }
+        .message.user .message-content {
+            background: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .message.ai .message-content {
+            background: var(--ai-msg-bg);
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-recommendation {
+            background: #f0f4ff;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+        .video-recommendation h6 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+        .video-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .video-link:last-child {
+            margin-bottom: 0;
+        }
+        .video-link:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        .video-link i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .chat-input-container {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            padding: 20px;
+        }
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+        }
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .usecase-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .usecase-chip {
+            background: #e9ecef;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .usecase-chip:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .welcome-message i {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .welcome-message h5 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .welcome-message p {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        .industry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-dark mb-3">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="/courses">
+                <i class="bi bi-mortarboard-fill"></i> LMS
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ session.username }}
+                    {% if session.industry_name %}
+                    <span class="industry-badge ms-2" style="background: rgba(255,255,255,0.2);">
+                        {{ session.industry_name }}
+                    </span>
+                    {% endif %}
+                </span>
+                <a href="/courses" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-collection-play"></i> コース
+                </a>
+                {% if session.is_admin %}
+                <a href="/admin" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-gear"></i> 管理
+                </a>
+                {% endif %}
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h4><i class="bi bi-robot"></i> AIアシスタント</h4>
+                <p>{{ session.industry_name or '全業種' }}向けの生成AIユースケースについて質問できます</p>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <!-- ウェルカムメッセージ -->
+                <div class="welcome-message" id="welcomeMessage">
+                    <i class="bi bi-chat-dots"></i>
+                    <h5>こんにちは！AIアシスタントです</h5>
+                    <p>
+                        {{ session.industry_name or 'あなた' }}の業務で生成AIをどのように活用できるか、<br>
+                        お気軽にご質問ください。関連するトレーニング動画もご紹介します。
+                    </p>
+                    <div class="usecase-chips" id="usecaseChips">
+                        <!-- 業種別ユースケースチップがここに表示される -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" id="chatInput" 
+                           placeholder="生成AIの活用方法について質問してください..."
+                           autocomplete="off">
+                    <button class="send-button" id="sendButton" onclick="sendMessage()">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const usecaseChips = document.getElementById('usecaseChips');
+        
+        // ユースケースを読み込む
+        async function loadUsecases() {
+            try {
+                const response = await fetch('/api/chat/usecases');
+                const usecases = await response.json();
+                
+                usecaseChips.innerHTML = '';
+                usecases.forEach(uc => {
+                    const chip = document.createElement('button');
+                    chip.className = 'usecase-chip';
+                    chip.textContent = uc.title;
+                    chip.onclick = () => {
+                        chatInput.value = uc.description + 'について教えてください';
+                        sendMessage();
+                    };
+                    usecaseChips.appendChild(chip);
+                });
+            } catch (error) {
+                console.error('ユースケース読み込みエラー:', error);
+            }
+        }
+        
+        // メッセージを送信
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // ウェルカムメッセージを非表示
+            welcomeMessage.style.display = 'none';
+            
+            // ユーザーメッセージを表示
+            appendMessage('user', message);
+            chatInput.value = '';
+            sendButton.disabled = true;
+            
+            // タイピングインジケーターを表示
+            const typingId = showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                // タイピングインジケーターを削除
+                removeTypingIndicator(typingId);
+                
+                if (data.success) {
+                    appendMessage('ai', data.response, data.recommended_videos);
+                } else {
+                    appendMessage('ai', 'エラーが発生しました: ' + data.error);
+                }
+            } catch (error) {
+                removeTypingIndicator(typingId);
+                appendMessage('ai', '通信エラーが発生しました。もう一度お試しください。');
+            }
+            
+            sendButton.disabled = false;
+        }
+        
+        // メッセージを追加
+        function appendMessage(type, content, videos = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = type === 'user' ? '<i class="bi bi-person"></i>' : '<i class="bi bi-robot"></i>';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // マークダウンの簡易変換
+            let formattedContent = content
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            contentDiv.innerHTML = formattedContent;
+            
+            // 動画推薦があれば追加
+            if (videos && videos.length > 0) {
+                const videoDiv = document.createElement('div');
+                videoDiv.className = 'video-recommendation';
+                videoDiv.innerHTML = '<h6><i class="bi bi-collection-play"></i> 関連するトレーニング動画</h6>';
+                
+                videos.forEach(video => {
+                    const link = document.createElement('a');
+                    link.className = 'video-link';
+                    link.href = `/watch/${video.slug || video.id}`;
+                    link.innerHTML = `<i class="bi bi-play-circle"></i> ${video.title}`;
+                    videoDiv.appendChild(link);
+                });
+                
+                contentDiv.appendChild(videoDiv);
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            // スクロールを最下部に
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // タイピングインジケーターを表示
+        function showTypingIndicator() {
+            const id = 'typing-' + Date.now();
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
+            messageDiv.id = id;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = '<i class="bi bi-robot"></i>';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return id;
+        }
+        
+        // タイピングインジケーターを削除
+        function removeTypingIndicator(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+            }
+        }
+        
+        // Enterキーで送信
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // ページ読み込み時にユースケースを取得
+        document.addEventListener('DOMContentLoaded', loadUsecases);
+    </script>
+</body>
+</html>
