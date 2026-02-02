@@ -9,9 +9,12 @@ import re
 import unicodedata
 from datetime import datetime
 
-# 環境変数読み込み
-from dotenv import load_dotenv
-load_dotenv()
+# 環境変数読み込み（dotenvがある場合のみ）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # PythonAnywhereではWSGIファイルで環境変数を設定
 
 # Rakuten AI 3.0 API用
 import httpx
