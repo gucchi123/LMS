@@ -948,6 +948,49 @@ def get_chat_usecases():
     
     return jsonify([dict(u) for u in usecases])
 
+# チャット履歴取得API
+@app.route('/api/chat/history')
+@login_required
+def get_chat_history():
+    """ユーザーのチャット履歴を取得"""
+    db = get_db()
+    user_id = session['user_id']
+    
+    # 最新50件の履歴を取得
+    history = db.execute('''
+        SELECT id, message, response, recommended_videos, created_at
+        FROM chat_history
+        WHERE user_id = ?
+        ORDER BY created_at ASC
+        LIMIT 50
+    ''', (user_id,)).fetchall()
+    
+    result = []
+    for h in history:
+        item = {
+            'id': h['id'],
+            'message': h['message'],
+            'response': h['response'],
+            'created_at': h['created_at']
+        }
+        # 推薦動画を復元
+        if h['recommended_videos']:
+            try:
+                video_ids = json.loads(h['recommended_videos'])
+                videos = []
+                for vid in video_ids:
+                    v = db.execute('SELECT id, title, slug FROM videos WHERE id = ?', (vid,)).fetchone()
+                    if v:
+                        videos.append({'id': v['id'], 'title': v['title'], 'slug': v['slug']})
+                item['recommended_videos'] = videos
+            except:
+                item['recommended_videos'] = []
+        else:
+            item['recommended_videos'] = []
+        result.append(item)
+    
+    return jsonify(result)
+
 # RAG検索: ビデオと説明から関連コンテンツを検索
 def search_relevant_content(db, question, industry_id):
     """質問に関連するコンテンツを検索"""

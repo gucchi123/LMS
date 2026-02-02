@@ -280,6 +280,9 @@
     <div class="chat-widget-header">
         <h5><i class="bi bi-robot"></i> AIアシスタント</h5>
         <div>
+            <button class="close-btn" onclick="clearWidgetHistory()" title="履歴消去" style="margin-right: 5px;">
+                <i class="bi bi-trash"></i>
+            </button>
             <a href="/chat" class="chat-widget-expand" title="全画面で開く">
                 <i class="bi bi-arrows-fullscreen"></i>
             </a>
@@ -316,13 +319,55 @@
     const chatWidgetWelcome = document.getElementById('chatWidgetWelcome');
     const chatWidgetSuggestions = document.getElementById('chatWidgetSuggestions');
     
+    let widgetHistoryLoaded = false;
+    
     // チャットウィンドウの開閉
     function toggleChatWidget() {
         chatWidgetWindow.classList.toggle('open');
         if (chatWidgetWindow.classList.contains('open')) {
             chatWidgetInput.focus();
             loadWidgetSuggestions();
+            // 初回オープン時に履歴を読み込む
+            if (!widgetHistoryLoaded && sessionStorage.getItem('widgetHistoryCleared') !== 'true') {
+                loadWidgetHistory();
+                widgetHistoryLoaded = true;
+            }
         }
+    }
+    
+    // チャット履歴を読み込む（ウィジェット用）
+    async function loadWidgetHistory() {
+        try {
+            const response = await fetch('/api/chat/history');
+            const history = await response.json();
+            
+            if (history.length > 0) {
+                // 履歴があればウェルカムメッセージを非表示
+                chatWidgetWelcome.style.display = 'none';
+                
+                // 履歴を表示（最新10件のみ）
+                const recentHistory = history.slice(-10);
+                recentHistory.forEach(item => {
+                    appendWidgetMessage('user', item.message);
+                    appendWidgetMessage('ai', item.response, item.recommended_videos);
+                });
+            }
+        } catch (error) {
+            console.error('履歴読み込みエラー:', error);
+        }
+    }
+    
+    // 履歴消去（UI上のみ）
+    function clearWidgetHistory() {
+        // メッセージをすべて削除
+        const messages = chatWidgetMessages.querySelectorAll('.chat-widget-message');
+        messages.forEach(msg => msg.remove());
+        
+        // ウェルカムメッセージを再表示
+        chatWidgetWelcome.style.display = 'block';
+        
+        // セッションストレージに消去フラグを設定
+        sessionStorage.setItem('widgetHistoryCleared', 'true');
     }
     
     // ユースケース提案を読み込む

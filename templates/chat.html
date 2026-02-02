@@ -269,8 +269,15 @@
     <div class="container">
         <div class="chat-container">
             <div class="chat-header">
-                <h4><i class="bi bi-robot"></i> AIアシスタント</h4>
-                <p>{{ session.industry_name or '全業種' }}向けの生成AIユースケースについて質問できます</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0"><i class="bi bi-robot"></i> AIアシスタント</h4>
+                        <p class="mb-0 mt-1">{{ session.industry_name or '全業種' }}向けの生成AIユースケースについて質問できます</p>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearChatHistory()" title="チャット履歴を消去">
+                        <i class="bi bi-trash"></i> 履歴消去
+                    </button>
+                </div>
             </div>
             
             <div class="chat-messages" id="chatMessages">
@@ -458,8 +465,52 @@
             }
         });
         
-        // ページ読み込み時にユースケースを取得
-        document.addEventListener('DOMContentLoaded', loadUsecases);
+        // チャット履歴を読み込む
+        async function loadChatHistory() {
+            try {
+                const response = await fetch('/api/chat/history');
+                const history = await response.json();
+                
+                if (history.length > 0) {
+                    // 履歴があればウェルカムメッセージを非表示
+                    welcomeMessage.style.display = 'none';
+                    
+                    // 履歴を表示
+                    history.forEach(item => {
+                        appendMessage('user', item.message);
+                        appendMessage('ai', item.response, item.recommended_videos);
+                    });
+                }
+            } catch (error) {
+                console.error('履歴読み込みエラー:', error);
+            }
+        }
+        
+        // チャット履歴を消去（UI上のみ）
+        function clearChatHistory() {
+            if (confirm('チャット履歴を消去しますか？\n（画面上の表示のみ消去され、データは保持されます）')) {
+                // メッセージをすべて削除
+                const messages = chatMessages.querySelectorAll('.message');
+                messages.forEach(msg => msg.remove());
+                
+                // ウェルカムメッセージを再表示
+                welcomeMessage.style.display = 'block';
+                
+                // セッションストレージに消去フラグを設定
+                sessionStorage.setItem('chatHistoryCleared', 'true');
+            }
+        }
+        
+        // ページ読み込み時
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ユースケースを取得
+            await loadUsecases();
+            
+            // セッション中に履歴消去されていなければ履歴を読み込む
+            if (sessionStorage.getItem('chatHistoryCleared') !== 'true') {
+                await loadChatHistory();
+            }
+        });
     </script>
 </body>
 </html>
