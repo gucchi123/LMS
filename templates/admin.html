@@ -45,6 +45,116 @@
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
         }
+        .category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: white;
+        }
+        .category-tree {
+            padding-left: 0;
+            list-style: none;
+        }
+        .category-tree li {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .category-tree li:hover {
+            background-color: #f8f9fa;
+        }
+        .category-tree .subcategory {
+            padding-left: 30px;
+            background-color: #fafafa;
+        }
+        .category-icon-preview {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-picker-wrapper input[type="color"] {
+            width: 50px;
+            height: 35px;
+            border: none;
+            cursor: pointer;
+        }
+        /* 業種・アクセス制御関連 */
+        .industry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: white;
+            margin: 2px;
+        }
+        .access-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            background-color: #e9ecef;
+            color: #495057;
+            margin: 1px;
+        }
+        .access-public {
+            background-color: #28a745;
+            color: white;
+        }
+        .access-restricted {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .category-access-info {
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        .industry-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .industry-card:hover {
+            background-color: #f8f9fa;
+        }
+        .access-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .access-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .access-checkbox-item:hover {
+            background-color: #f8f9fa;
+        }
+        .access-checkbox-item.selected {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -85,8 +195,8 @@
                         <tr>
                             <th>ID</th>
                             <th>タイトル</th>
+                            <th>カテゴリー</th>
                             <th>説明</th>
-                            <th>ファイル名</th>
                             <th>アップロード日</th>
                             <th>操作</th>
                         </tr>
@@ -96,11 +206,17 @@
                         <tr>
                             <td>{{ video.id }}</td>
                             <td>{{ video.title }}</td>
+                            <td>
+                                {% if video.category_name %}
+                                <span class="badge bg-primary">{{ video.category_name }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">未分類</span>
+                                {% endif %}
+                            </td>
                             <td>{{ video.description or '-' }}</td>
-                            <td><small class="text-muted">{{ video.filename }}</small></td>
                             <td>{{ video.created_at.split('.')[0] if '.' in video.created_at else video.created_at }}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editVideo({{ video.id }}, '{{ video.title }}', '{{ video.description or '' }}')">
+                                <button class="btn btn-sm btn-primary" onclick="editVideo({{ video.id }}, '{{ video.title }}', '{{ video.description or '' }}', {{ video.category_id or 'null' }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteVideo({{ video.id }}, '{{ video.title }}')">
@@ -114,10 +230,132 @@
             </div>
         </div>
 
-        <!-- ユーザー管理セクション -->
+        <!-- カテゴリー管理セクション -->
         <div class="admin-section">
             <div class="section-header">
+                <h3><i class="bi bi-folder"></i> カテゴリー管理</h3>
+            </div>
+            
+            <button class="btn btn-gradient mb-3" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openCategoryModal()">
+                <i class="bi bi-plus-circle"></i> 新しいカテゴリーを追加
+            </button>
+
+            <div class="row">
+                <div class="col-12">
+                    <ul class="category-tree">
+                        {% for category in categories if category.parent_id is none %}
+                        <li class="parent-category">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <i class="{{ category.icon }} category-icon-preview" style="color: {{ category.color }}"></i>
+                                <div class="flex-grow-1">
+                                    <strong>{{ category.name }}</strong>
+                                    <div class="category-access-info">
+                                        {% if category_access[category.id] %}
+                                        <span class="access-badge access-restricted">
+                                            <i class="bi bi-lock"></i> 制限あり
+                                        </span>
+                                        {% for ind in category_access[category.id] %}
+                                        <span class="access-badge">{{ ind.name }}</span>
+                                        {% endfor %}
+                                        {% else %}
+                                        <span class="access-badge access-public">
+                                            <i class="bi bi-globe"></i> 全業種公開
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-warning" onclick="openAccessModal({{ category.id }}, '{{ category.name }}')">
+                                    <i class="bi bi-shield-lock"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openCategoryModal({{ category.id }}, '{{ category.name }}', '{{ category.description or '' }}', '{{ category.icon }}', '{{ category.color }}', null, {{ category.display_order }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" onclick="openCategoryModal(null, '', '', 'bi-folder', '{{ category.color }}', {{ category.id }})">
+                                    <i class="bi bi-plus"></i> サブ
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </li>
+                        {% for subcategory in categories if subcategory.parent_id == category.id %}
+                        <li class="subcategory">
+                            <div class="d-flex align-items-center">
+                                <i class="{{ subcategory.icon }} category-icon-preview" style="color: {{ subcategory.color }}"></i>
+                                <div>
+                                    <strong>{{ subcategory.name }}</strong>
+                                    <br><small class="text-muted">{{ subcategory.description or '' }}</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openCategoryModal({{ subcategory.id }}, '{{ subcategory.name }}', '{{ subcategory.description or '' }}', '{{ subcategory.icon }}', '{{ subcategory.color }}', {{ subcategory.parent_id }}, {{ subcategory.display_order }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ subcategory.id }}, '{{ subcategory.name }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+                    {% if not categories %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> カテゴリーがありません。「新しいカテゴリーを追加」ボタンから作成してください。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 業種管理セクション -->
+        <div class="admin-section">
+            <div class="section-header d-flex justify-content-between align-items-center">
+                <h3><i class="bi bi-building"></i> 業種管理</h3>
+                <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#industryModal" onclick="openIndustryModal()">
+                    <i class="bi bi-plus-lg"></i> 新しい業種を追加
+                </button>
+            </div>
+            
+            <div class="row">
+                {% for industry in industries %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="industry-card">
+                        <div class="d-flex align-items-center">
+                            <i class="{{ industry.icon }}" style="font-size: 1.5rem; color: {{ industry.color }}; margin-right: 10px;"></i>
+                            <div>
+                                <strong>{{ industry.name }}</strong>
+                                <small class="text-muted d-block">{{ industry.name_en }}</small>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openIndustryModal({{ industry.id }}, '{{ industry.name }}', '{{ industry.name_en }}', '{{ industry.description or '' }}', '{{ industry.icon }}', '{{ industry.color }}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteIndustry({{ industry.id }}, '{{ industry.name }}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not industries %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 業種がありません。「新しい業種を追加」ボタンから作成してください。
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ユーザー管理セクション -->
+        <div class="admin-section">
+            <div class="section-header d-flex justify-content-between align-items-center">
                 <h3><i class="bi bi-people"></i> ユーザー管理</h3>
+                <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#userModal" onclick="openUserModal()">
+                    <i class="bi bi-person-plus"></i> 新しいユーザーを追加
+                </button>
             </div>
 
             <div class="table-responsive">
@@ -127,6 +365,9 @@
                             <th>ID</th>
                             <th>ユーザー名</th>
                             <th>メール</th>
+                            <th>業種</th>
+                            <th>会社名</th>
+                            <th>権限</th>
                             <th>登録日</th>
                             <th>操作</th>
                         </tr>
@@ -137,11 +378,32 @@
                             <td>{{ user.id }}</td>
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.industry_name %}
+                                <span class="badge bg-secondary">{{ user.industry_name }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.company_name or '-' }}</td>
+                            <td>
+                                {% if user.id == session.user_id %}
+                                <span class="badge bg-primary">あなた</span>
+                                {% endif %}
+                            </td>
                             <td>{{ user.created_at.split('.')[0] if '.' in user.created_at else user.created_at }}</td>
                             <td>
                                 <button class="btn btn-sm btn-info text-white" onclick="viewUserStats({{ user.id }}, '{{ user.username }}')">
-                                    <i class="bi bi-bar-chart"></i> 視聴統計
+                                    <i class="bi bi-bar-chart"></i>
                                 </button>
+                                <button class="btn btn-sm btn-primary" onclick="editUser({{ user.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% if user.id != session.user_id %}
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -168,6 +430,18 @@
                         <div class="mb-3">
                             <label for="videoDescription" class="form-label">説明</label>
                             <textarea class="form-control" id="videoDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="videoCategory" class="form-label">カテゴリー</label>
+                            <select class="form-select" id="videoCategory">
+                                <option value="">未分類</option>
+                                {% for category in categories if category.parent_id is none %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% for subcategory in categories if subcategory.parent_id == category.id %}
+                                <option value="{{ subcategory.id }}">└ {{ subcategory.name }}</option>
+                                {% endfor %}
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="videoFile" class="form-label">動画ファイル * (MP4, AVI, MOV, MKV, WebM)</label>
@@ -205,6 +479,18 @@
                         <label for="editVideoDescription" class="form-label">説明</label>
                         <textarea class="form-control" id="editVideoDescription" rows="3"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label for="editVideoCategory" class="form-label">カテゴリー</label>
+                        <select class="form-select" id="editVideoCategory">
+                            <option value="">未分類</option>
+                            {% for category in categories if category.parent_id is none %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% for subcategory in categories if subcategory.parent_id == category.id %}
+                            <option value="{{ subcategory.id }}">└ {{ subcategory.name }}</option>
+                            {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
@@ -233,12 +519,233 @@
         </div>
     </div>
 
+    <!-- カテゴリー作成/編集モーダル -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">カテゴリーを追加</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="categoryId">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">カテゴリー名 *</label>
+                        <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">説明</label>
+                        <textarea class="form-control" id="categoryDescription" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryParent" class="form-label">親カテゴリー</label>
+                        <select class="form-select" id="categoryParent">
+                            <option value="">なし（トップレベル）</option>
+                            {% for category in categories if category.parent_id is none %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="categoryIcon" class="form-label">アイコン</label>
+                            <select class="form-select" id="categoryIcon" onchange="updateIconPreview()">
+                                <option value="bi-folder">📁 フォルダー</option>
+                                <option value="bi-book">📚 本</option>
+                                <option value="bi-lightbulb">💡 電球</option>
+                                <option value="bi-briefcase">💼 ブリーフケース</option>
+                                <option value="bi-chat-dots">💬 チャット</option>
+                                <option value="bi-gear">⚙️ 歯車</option>
+                                <option value="bi-graph-up">📈 グラフ</option>
+                                <option value="bi-bar-chart">📊 棒グラフ</option>
+                                <option value="bi-collection">📑 コレクション</option>
+                                <option value="bi-people">👥 人々</option>
+                                <option value="bi-rocket">🚀 ロケット</option>
+                                <option value="bi-star">⭐ 星</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="categoryColor" class="form-label">カラー</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="categoryColor" value="#667eea">
+                                <span id="categoryColorHex">#667eea</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryOrder" class="form-label">表示順</label>
+                        <input type="number" class="form-control" id="categoryOrder" value="0" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">プレビュー</label>
+                        <div class="d-flex align-items-center p-3 border rounded">
+                            <i id="iconPreview" class="bi-folder category-icon-preview" style="color: #667eea; font-size: 2rem;"></i>
+                            <span id="namePreview" class="ms-2 fw-bold">カテゴリー名</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveCategory()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 業種作成/編集モーダル -->
+    <div class="modal fade" id="industryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="industryModalTitle">業種を追加</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="industryId">
+                    <div class="mb-3">
+                        <label for="industryName" class="form-label">業種名（日本語） *</label>
+                        <input type="text" class="form-control" id="industryName" required placeholder="例：宿泊">
+                    </div>
+                    <div class="mb-3">
+                        <label for="industryNameEn" class="form-label">業種名（英語）</label>
+                        <input type="text" class="form-control" id="industryNameEn" placeholder="例：Accommodation">
+                    </div>
+                    <div class="mb-3">
+                        <label for="industryDescription" class="form-label">説明</label>
+                        <textarea class="form-control" id="industryDescription" rows="2" placeholder="例：宿泊業・ホテル・旅館"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="industryIcon" class="form-label">アイコン</label>
+                            <select class="form-select" id="industryIcon">
+                                <option value="bi-building">🏢 ビルディング</option>
+                                <option value="bi-house-door">🏠 住宅</option>
+                                <option value="bi-shop">🏪 ショップ</option>
+                                <option value="bi-cup-hot">☕ 飲食</option>
+                                <option value="bi-heart-pulse">💗 介護</option>
+                                <option value="bi-hospital">🏥 医療</option>
+                                <option value="bi-mortarboard">🎓 教育</option>
+                                <option value="bi-truck">🚚 物流</option>
+                                <option value="bi-gear">⚙️ 製造</option>
+                                <option value="bi-laptop">💻 IT</option>
+                                <option value="bi-bank">🏦 金融</option>
+                                <option value="bi-cart">🛒 EC</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="industryColor" class="form-label">カラー</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="industryColor" value="#667eea">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveIndustry()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- アクセス権限設定モーダル -->
+    <div class="modal fade" id="accessModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-lock"></i> アクセス権限設定</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="accessCategoryId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">カテゴリー: <span id="accessCategoryName"></span></label>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted small">
+                            <i class="bi bi-info-circle"></i> 
+                            業種を選択しない場合は「全業種公開」となります。
+                            選択した業種のユーザーのみがこのカテゴリーにアクセスできます。
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">アクセスを許可する業種</label>
+                        <div id="accessIndustryList" class="access-checkbox-group">
+                            <!-- JavaScriptで動的に生成 -->
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div id="accessPreview" class="p-3 border rounded">
+                            <span class="access-badge access-public"><i class="bi bi-globe"></i> 全業種公開</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveAccessControl()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ユーザー作成/編集モーダル -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalTitle"><i class="bi bi-person-plus"></i> ユーザーを追加</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label for="userUsername" class="form-label">ユーザー名 *</label>
+                        <input type="text" class="form-control" id="userUsername" required placeholder="例：tanaka_hotel">
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">メールアドレス *</label>
+                        <input type="email" class="form-control" id="userEmail" required placeholder="例：tanaka@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="userPassword" class="form-label">パスワード <span id="passwordRequiredMark">*</span></label>
+                        <input type="password" class="form-control" id="userPassword" placeholder="パスワードを入力">
+                        <small class="text-muted" id="passwordHint" style="display: none;">空欄の場合、パスワードは変更されません</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userIndustry" class="form-label">業種</label>
+                        <select class="form-select" id="userIndustry">
+                            <option value="">なし（管理者向け）</option>
+                            {% for industry in industries %}
+                            <option value="{{ industry.id }}">{{ industry.name }} ({{ industry.name_en }})</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">業種を選択すると、その業種専用コンテンツにアクセスできます</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userCompany" class="form-label">会社名</label>
+                        <input type="text" class="form-control" id="userCompany" placeholder="例：グランドホテル東京">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="userIsAdmin">
+                        <label class="form-check-label" for="userIsAdmin">管理者権限を付与</label>
+                        <small class="text-muted d-block">管理者は全カテゴリーにアクセスでき、管理画面を使用できます</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-gradient" onclick="saveUser()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // 動画アップロード
         async function uploadVideo() {
             const title = document.getElementById('videoTitle').value;
             const description = document.getElementById('videoDescription').value;
+            const categoryId = document.getElementById('videoCategory').value;
             const file = document.getElementById('videoFile').files[0];
             
             if (!title || !file) {
@@ -249,6 +756,7 @@
             const formData = new FormData();
             formData.append('title', title);
             formData.append('description', description);
+            formData.append('category_id', categoryId);
             formData.append('video', file);
             
             const progressBar = document.querySelector('#uploadProgress .progress-bar');
@@ -274,10 +782,11 @@
         }
 
         // 動画編集
-        function editVideo(id, title, description) {
+        function editVideo(id, title, description, categoryId) {
             document.getElementById('editVideoId').value = id;
             document.getElementById('editVideoTitle').value = title;
             document.getElementById('editVideoDescription').value = description;
+            document.getElementById('editVideoCategory').value = categoryId || '';
             new bootstrap.Modal(document.getElementById('editModal')).show();
         }
 
@@ -285,14 +794,25 @@
             const id = document.getElementById('editVideoId').value;
             const title = document.getElementById('editVideoTitle').value;
             const description = document.getElementById('editVideoDescription').value;
+            const categoryId = document.getElementById('editVideoCategory').value;
             
             try {
+                // 動画情報を更新
                 const response = await fetch(`/api/admin/update/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ title, description })
+                });
+                
+                // カテゴリーを更新
+                await fetch(`/api/admin/videos/${id}/category`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ category_id: categoryId ? parseInt(categoryId) : null })
                 });
                 
                 const data = await response.json();
@@ -372,6 +892,457 @@
                 modalBody.innerHTML = html;
             } catch (error) {
                 modalBody.innerHTML = '<div class="alert alert-danger">統計の読み込みに失敗しました</div>';
+            }
+        }
+
+        // ========== カテゴリー管理 ==========
+
+        // カテゴリーモーダルを開く
+        function openCategoryModal(id = null, name = '', description = '', icon = 'bi-folder', color = '#667eea', parentId = null, displayOrder = 0) {
+            document.getElementById('categoryId').value = id || '';
+            document.getElementById('categoryName').value = name;
+            document.getElementById('categoryDescription').value = description;
+            document.getElementById('categoryIcon').value = icon;
+            document.getElementById('categoryColor').value = color;
+            document.getElementById('categoryColorHex').textContent = color;
+            document.getElementById('categoryParent').value = parentId || '';
+            document.getElementById('categoryOrder').value = displayOrder;
+            
+            // プレビュー更新
+            updateIconPreview();
+            document.getElementById('namePreview').textContent = name || 'カテゴリー名';
+            
+            // モーダルタイトル設定
+            document.getElementById('categoryModalTitle').textContent = id ? 'カテゴリーを編集' : 'カテゴリーを追加';
+            
+            new bootstrap.Modal(document.getElementById('categoryModal')).show();
+        }
+
+        // アイコンプレビュー更新
+        function updateIconPreview() {
+            const icon = document.getElementById('categoryIcon').value;
+            const color = document.getElementById('categoryColor').value;
+            document.getElementById('iconPreview').className = icon + ' category-icon-preview';
+            document.getElementById('iconPreview').style.color = color;
+            document.getElementById('categoryColorHex').textContent = color;
+        }
+
+        // カラー変更時の処理
+        document.getElementById('categoryColor').addEventListener('input', updateIconPreview);
+        document.getElementById('categoryName').addEventListener('input', function() {
+            document.getElementById('namePreview').textContent = this.value || 'カテゴリー名';
+        });
+
+        // カテゴリー保存
+        async function saveCategory() {
+            const id = document.getElementById('categoryId').value;
+            const name = document.getElementById('categoryName').value;
+            const description = document.getElementById('categoryDescription').value;
+            const icon = document.getElementById('categoryIcon').value;
+            const color = document.getElementById('categoryColor').value;
+            const parentId = document.getElementById('categoryParent').value;
+            const displayOrder = parseInt(document.getElementById('categoryOrder').value) || 0;
+            
+            if (!name) {
+                alert('カテゴリー名は必須です');
+                return;
+            }
+            
+            const data = {
+                name,
+                description,
+                icon,
+                color,
+                parent_id: parentId ? parseInt(parentId) : null,
+                display_order: displayOrder
+            };
+            
+            try {
+                const url = id ? `/api/admin/categories/${id}` : '/api/admin/categories';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(id ? 'カテゴリーを更新しました' : 'カテゴリーを作成しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('保存中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // カテゴリー削除
+        async function deleteCategory(id, name) {
+            if (!confirm(`「${name}」を削除してもよろしいですか？\n\n注意: このカテゴリーに紐付いている動画は「未分類」になります。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/categories/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('カテゴリーを削除しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            } catch (error) {
+                alert('削除中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // ========== 業種管理 ==========
+
+        // 業種データをキャッシュ
+        let industriesCache = [];
+
+        // 業種リストを読み込む
+        async function loadIndustries() {
+            try {
+                const response = await fetch('/api/industries');
+                industriesCache = await response.json();
+                return industriesCache;
+            } catch (error) {
+                console.error('業種の読み込みに失敗しました:', error);
+                return [];
+            }
+        }
+
+        // 業種モーダルを開く
+        function openIndustryModal(id = null, name = '', nameEn = '', description = '', icon = 'bi-building', color = '#667eea') {
+            document.getElementById('industryId').value = id || '';
+            document.getElementById('industryName').value = name;
+            document.getElementById('industryNameEn').value = nameEn;
+            document.getElementById('industryDescription').value = description;
+            document.getElementById('industryIcon').value = icon;
+            document.getElementById('industryColor').value = color;
+            
+            document.getElementById('industryModalTitle').textContent = id ? '業種を編集' : '業種を追加';
+        }
+
+        // 業種を保存
+        async function saveIndustry() {
+            const id = document.getElementById('industryId').value;
+            const name = document.getElementById('industryName').value;
+            const nameEn = document.getElementById('industryNameEn').value;
+            const description = document.getElementById('industryDescription').value;
+            const icon = document.getElementById('industryIcon').value;
+            const color = document.getElementById('industryColor').value;
+            
+            if (!name) {
+                alert('業種名は必須です');
+                return;
+            }
+            
+            const data = {
+                name,
+                name_en: nameEn,
+                description,
+                icon,
+                color
+            };
+            
+            try {
+                const url = id ? `/api/admin/industries/${id}` : '/api/admin/industries';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(id ? '業種を更新しました' : '業種を追加しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('保存中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // 業種を削除
+        async function deleteIndustry(id, name) {
+            if (!confirm(`「${name}」を削除してもよろしいですか？\n\n注意: この業種に所属するユーザーがいる場合は削除できません。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/industries/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('業種を削除しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            } catch (error) {
+                alert('削除中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // ========== アクセス権限管理 ==========
+
+        // アクセス権限モーダルで選択されている業種ID
+        let selectedIndustryIds = [];
+
+        // アクセス権限モーダルを開く
+        async function openAccessModal(categoryId, categoryName) {
+            document.getElementById('accessCategoryId').value = categoryId;
+            document.getElementById('accessCategoryName').textContent = categoryName;
+            
+            // 業種リストを読み込む
+            if (industriesCache.length === 0) {
+                await loadIndustries();
+            }
+            
+            // 現在のアクセス設定を取得
+            try {
+                const response = await fetch(`/api/admin/categories/${categoryId}/access`);
+                const accessData = await response.json();
+                selectedIndustryIds = accessData.industry_ids || [];
+            } catch (error) {
+                console.error('アクセス設定の取得に失敗しました:', error);
+                selectedIndustryIds = [];
+            }
+            
+            // 業種チェックボックスを生成
+            const container = document.getElementById('accessIndustryList');
+            container.innerHTML = '';
+            
+            industriesCache.forEach(industry => {
+                const isSelected = selectedIndustryIds.includes(industry.id);
+                const item = document.createElement('div');
+                item.className = 'access-checkbox-item' + (isSelected ? ' selected' : '');
+                item.dataset.industryId = industry.id;
+                item.innerHTML = `
+                    <i class="${industry.icon}" style="color: ${industry.color}"></i>
+                    <span>${industry.name}</span>
+                `;
+                item.onclick = function() {
+                    toggleIndustrySelection(industry.id, this);
+                };
+                container.appendChild(item);
+            });
+            
+            updateAccessPreview();
+            
+            new bootstrap.Modal(document.getElementById('accessModal')).show();
+        }
+
+        // 業種選択のトグル
+        function toggleIndustrySelection(industryId, element) {
+            const index = selectedIndustryIds.indexOf(industryId);
+            if (index === -1) {
+                selectedIndustryIds.push(industryId);
+                element.classList.add('selected');
+            } else {
+                selectedIndustryIds.splice(index, 1);
+                element.classList.remove('selected');
+            }
+            updateAccessPreview();
+        }
+
+        // アクセスプレビューを更新
+        function updateAccessPreview() {
+            const previewContainer = document.getElementById('accessPreview');
+            
+            if (selectedIndustryIds.length === 0) {
+                previewContainer.innerHTML = '<span class="access-badge access-public"><i class="bi bi-globe"></i> 全業種公開</span>';
+            } else {
+                const selectedIndustries = industriesCache.filter(i => selectedIndustryIds.includes(i.id));
+                let html = '<span class="access-badge access-restricted"><i class="bi bi-lock"></i> 制限あり</span> ';
+                html += selectedIndustries.map(i => `<span class="access-badge">${i.name}</span>`).join(' ');
+                previewContainer.innerHTML = html;
+            }
+        }
+
+        // アクセス権限を保存
+        async function saveAccessControl() {
+            const categoryId = document.getElementById('accessCategoryId').value;
+            
+            try {
+                const response = await fetch(`/api/admin/categories/${categoryId}/access`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        industry_ids: selectedIndustryIds
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('アクセス権限を更新しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('保存中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // ページ読み込み時に業種を読み込む
+        document.addEventListener('DOMContentLoaded', function() {
+            loadIndustries();
+        });
+
+        // ========== ユーザー管理 ==========
+
+        // ユーザーモーダルを開く
+        function openUserModal(id = null) {
+            document.getElementById('userId').value = id || '';
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userIndustry').value = '';
+            document.getElementById('userCompany').value = '';
+            document.getElementById('userIsAdmin').checked = false;
+            
+            // 新規作成時はパスワード必須
+            if (id) {
+                document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-person-gear"></i> ユーザーを編集';
+                document.getElementById('passwordRequiredMark').style.display = 'none';
+                document.getElementById('passwordHint').style.display = 'block';
+                document.getElementById('userPassword').removeAttribute('required');
+            } else {
+                document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-person-plus"></i> ユーザーを追加';
+                document.getElementById('passwordRequiredMark').style.display = 'inline';
+                document.getElementById('passwordHint').style.display = 'none';
+                document.getElementById('userPassword').setAttribute('required', 'required');
+            }
+        }
+
+        // ユーザー編集
+        async function editUser(userId) {
+            openUserModal(userId);
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`);
+                const user = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('userUsername').value = user.username;
+                    document.getElementById('userEmail').value = user.email;
+                    document.getElementById('userIndustry').value = user.industry_id || '';
+                    document.getElementById('userCompany').value = user.company_name || '';
+                    document.getElementById('userIsAdmin').checked = user.is_admin;
+                    
+                    new bootstrap.Modal(document.getElementById('userModal')).show();
+                } else {
+                    alert('エラー: ' + user.error);
+                }
+            } catch (error) {
+                alert('ユーザー情報の取得に失敗しました: ' + error);
+            }
+        }
+
+        // ユーザー保存
+        async function saveUser() {
+            const id = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value;
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            const industryId = document.getElementById('userIndustry').value;
+            const companyName = document.getElementById('userCompany').value;
+            const isAdmin = document.getElementById('userIsAdmin').checked;
+            
+            if (!username || !email) {
+                alert('ユーザー名とメールアドレスは必須です');
+                return;
+            }
+            
+            if (!id && !password) {
+                alert('新規ユーザーにはパスワードが必須です');
+                return;
+            }
+            
+            const data = {
+                username,
+                email,
+                industry_id: industryId ? parseInt(industryId) : null,
+                company_name: companyName,
+                is_admin: isAdmin
+            };
+            
+            if (password) {
+                data.password = password;
+            }
+            
+            try {
+                const url = id ? `/api/admin/users/${id}` : '/api/admin/users';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(id ? 'ユーザーを更新しました' : 'ユーザーを作成しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + result.error);
+                }
+            } catch (error) {
+                alert('保存中にエラーが発生しました: ' + error);
+            }
+        }
+
+        // ユーザー削除
+        async function deleteUser(userId, username) {
+            if (!confirm(`「${username}」を削除してもよろしいですか？\n\nこの操作は取り消せません。ユーザーの視聴履歴も削除されます。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('ユーザーを削除しました');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            } catch (error) {
+                alert('削除中にエラーが発生しました: ' + error);
             }
         }
     </script>

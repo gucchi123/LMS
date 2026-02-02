@@ -7,7 +7,7 @@
 ### ステップ 1: GitHubにコードをプッシュ
 
 ```bash
-cd "C:\Users\makoto.mizuguchi\OneDrive - Rakuten Group, Inc\CursorFiles\50Development\LMS"
+cd "50Development/LMS"
 
 # Gitリポジトリを初期化
 git init
@@ -16,7 +16,7 @@ git init
 git add .
 
 # コミット
-git commit -m "Initial commit: LMS application"
+git commit -m "Initial commit: LMS application with industry-based access control"
 
 # GitHubリポジトリを作成後、リモートを追加
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
@@ -184,8 +184,19 @@ print(secrets.token_hex(32))
 ### パスワード変更:
 
 デプロイ後、必ずデフォルトパスワードを変更してください：
-- 管理者: `admin` / `admin123` → 変更必須
-- ユーザー: `user1` / `user123` → 変更必須
+
+**管理者:**
+- `admin` / `admin123` → 変更必須
+
+**業種別ユーザー（パスワード: user123）:**
+| 業種 | ユーザー名 |
+|-----|-----------|
+| 宿泊 | `hotel_tanaka`, `ryokan_suzuki` |
+| 小売 | `retail_yamada`, `shop_sato` |
+| 飲食 | `restaurant_ito` |
+| 介護 | `care_watanabe` |
+| 医療 | `medical_takahashi` |
+| 教育 | `edu_kobayashi` |
 
 ---
 
@@ -239,6 +250,10 @@ git commit -m "Track video files with Git LFS"
 - サーバーの一時ディレクトリの権限を確認
 - クラウドストレージの使用を検討
 
+### 業種別アクセスが機能しない
+- データベースが正しく初期化されているか確認
+- `category_industry_access` テーブルにデータがあるか確認
+
 ---
 
 ## 🎉 デプロイ成功後
@@ -248,8 +263,9 @@ git commit -m "Track video files with Git LFS"
 1. 公開URLにアクセス
 2. `admin / admin123` でログイン
 3. パスワードを変更
-4. 動画をアップロード
-5. ユーザーを追加
+4. 業種とカテゴリーを設定
+5. 動画をアップロード
+6. ユーザーを追加（業種・会社名設定）
 
 おめでとうございます！LMSが公開されました！🚀
 

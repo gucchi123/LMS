@@ -1,6 +1,6 @@
 # LMS - Learning Management System
 
-動画ベースの学習管理システム（LMS）です。
+動画ベースの学習管理システム（LMS）です。**業種別アクセス制御**機能を搭載し、各業種に特化したトレーニングコンテンツを提供できます。
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
@@ -15,13 +15,30 @@
 - 📊 視聴進捗の自動保存
 - ▶️ 前回の続きから再生
 - 🎯 視聴完了ステータス
+- 📂 カテゴリー別コンテンツ閲覧
+- 🏢 **業種別コンテンツアクセス**
 
 ### 管理者機能
 - 📤 動画のアップロード
 - ✏️ 動画情報の編集
 - 🗑️ 動画の削除
+- 📁 カテゴリー管理（階層構造）
+- 🏭 **業種管理**
+- 🔐 **カテゴリーアクセス制御**
 - 👥 ユーザー管理
 - 📈 視聴統計の閲覧
+
+## 🏢 業種別アクセス制御
+
+このLMSの特徴は、**業種別にコンテンツへのアクセスを制御**できることです。
+
+### 対応業種（デフォルト）
+- 🏨 宿泊（Accommodation）
+- 🏪 小売（Retail）
+- 🍽️ 飲食（Food and Beverage）
+- 💗 介護（Nursing Care）
+- 🏥 医療（Medical Care）
+- 🎓 教育（Education）
 
 ## 🚀 クイックスタート（ローカル）
 
@@ -58,9 +75,18 @@ python app.py
 - ユーザー名: `admin`
 - パスワード: `admin123`
 
-**一般ユーザー:**
-- ユーザー名: `user1`
-- パスワード: `user123`
+**業種別ユーザー（パスワード: `user123`）:**
+
+| 業種 | ユーザー名 | 会社名 |
+|-----|-----------|-------|
+| 🏨 宿泊 | `hotel_tanaka` | グランドホテル東京 |
+| 🏨 宿泊 | `ryokan_suzuki` | 湯元旅館 |
+| 🏪 小売 | `retail_yamada` | スーパーマート |
+| 🏪 小売 | `shop_sato` | ファッションストア |
+| 🍽️ 飲食 | `restaurant_ito` | さくらレストラン |
+| 💗 介護 | `care_watanabe` | スマイルケアセンター |
+| 🏥 医療 | `medical_takahashi` | セントラルクリニック |
+| 🎓 教育 | `edu_kobayashi` | ブライトアカデミー |
 
 > ⚠️ **重要**: 本番環境では必ずパスワードを変更してください
 
@@ -92,20 +118,23 @@ python app.py
 LMS/
 ├── app.py                  # メインアプリケーション
 ├── init_db.py              # データベース初期化
+├── test_app.py             # テストスイート（29テスト）
 ├── requirements.txt        # 依存パッケージ
 ├── Procfile                # デプロイ設定
 ├── runtime.txt             # Pythonバージョン
 ├── .gitignore              # Git除外設定
-├── README.md               # このファイル
+├── README.md               # 詳細ドキュメント
 ├── QUICKSTART.md           # 使い方ガイド
 ├── DEPLOYMENT.md           # デプロイガイド
 ├── lms.db                  # SQLiteデータベース
 ├── videos/                 # 動画保存フォルダ
 └── templates/              # HTMLテンプレート
-    ├── login.html
-    ├── dashboard.html
-    ├── watch.html
-    └── admin.html
+    ├── login.html          # ログインページ
+    ├── course_catalog.html # コースカタログ
+    ├── category_detail.html # カテゴリー詳細
+    ├── dashboard.html      # ダッシュボード
+    ├── watch.html          # 動画視聴
+    └── admin.html          # 管理画面
 ```
 
 ## 🛠️ 技術スタック
@@ -139,6 +168,22 @@ import secrets
 print(secrets.token_hex(32))
 ```
 
+## 🧪 テスト
+
+```bash
+# pytestをインストール
+pip install pytest
+
+# テストを実行
+python -m pytest test_app.py -v
+```
+
+全29テストが含まれています：
+- ログイン機能テスト
+- 業種別アクセス制御テスト
+- 管理画面アクセステスト
+- API テスト
+
 ## 🎬 動画のアップロード
 
 - サポート形式: MP4, AVI, MOV, MKV, WebM
@@ -163,16 +208,21 @@ python init_db.py
 - ブラウザのコンソール（F12）でエラーを確認
 - MP4形式を使用することを推奨
 
+### カテゴリーが表示されない
+- ログインユーザーの業種を確認
+- 管理画面でアクセス制御設定を確認
+
 ## 📊 データベーススキーマ
 
-### users
-- id, username, email, password_hash, is_admin, created_at
-
-### videos
-- id, title, description, filename, uploaded_by, created_at
-
-### progress
-- id, user_id, video_id, progress_percent, last_position, updated_at
+### テーブル一覧
+| テーブル | 説明 |
+|---------|------|
+| `users` | ユーザー情報（業種・会社名含む） |
+| `industries` | 業種マスタ |
+| `categories` | カテゴリー（階層構造対応） |
+| `category_industry_access` | アクセス制御 |
+| `videos` | 動画情報 |
+| `progress` | 視聴進捗 |
 
 ## 🤝 コントリビューション
 

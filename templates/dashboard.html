@@ -46,19 +46,34 @@
         .badge-not-started {
             background-color: #6c757d;
         }
+        .category-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <!-- ナビゲーションバー -->
     <nav class="navbar navbar-dark mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-book"></i> LMS - ダッシュボード
+            <a class="navbar-brand" href="/courses">
+                <i class="bi bi-mortarboard-fill"></i> Rakuten AI for Business トレーニング
             </a>
             <div class="d-flex align-items-center">
                 <span class="text-white me-3">
                     <i class="bi bi-person-circle"></i> {{ session.username }}
+                    {% if session.industry_name %}
+                    <small class="ms-1 opacity-75">[{{ session.industry_name }}]</small>
+                    {% endif %}
+                    {% if session.company_name %}
+                    <small class="ms-1 opacity-75">{{ session.company_name }}</small>
+                    {% endif %}
                 </span>
+                <a href="/courses" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-grid"></i> コースメニュー
+                </a>
                 {% if session.is_admin %}
                 <a href="/admin" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-gear"></i> 管理画面
@@ -74,8 +89,14 @@
     <div class="container">
         <div class="row mb-4">
             <div class="col">
-                <h2><i class="bi bi-play-circle"></i> 利用可能な動画コンテンツ</h2>
-                <p class="text-muted">動画をクリックして学習を開始しましょう</p>
+                <nav aria-label="breadcrumb" class="mb-2">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/courses">コースメニュー</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">全動画一覧</li>
+                    </ol>
+                </nav>
+                <h2><i class="bi bi-collection-play"></i> すべての動画コンテンツ</h2>
+                <p class="text-muted">すべてのトレーニング動画を一覧表示しています</p>
             </div>
         </div>
 
@@ -88,6 +109,11 @@
                         <i class="bi bi-play-circle"></i>
                     </div>
                     <div class="card-body">
+                        {% if video.category_name %}
+                        <span class="category-badge mb-2 d-inline-block" style="background-color: {{ video.category_color or '#667eea' }}">
+                            {{ video.category_name }}
+                        </span>
+                        {% endif %}
                         <h5 class="card-title">{{ video.title }}</h5>
                         <p class="card-text text-muted">{{ video.description or '説明なし' }}</p>
                         

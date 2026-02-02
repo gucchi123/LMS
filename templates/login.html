@@ -68,7 +68,14 @@
             <small class="text-muted">
                 <strong>デモアカウント:</strong><br>
                 管理者: <code>admin / admin123</code><br>
-                ユーザー: <code>user1 / user123</code>
+                <hr class="my-2">
+                <strong>業種別アカウント (パスワード: user123)</strong><br>
+                🏨 宿泊: <code>hotel_tanaka</code> / <code>ryokan_suzuki</code><br>
+                🏪 小売: <code>retail_yamada</code> / <code>shop_sato</code><br>
+                🍽️ 飲食: <code>restaurant_ito</code><br>
+                💗 介護: <code>care_watanabe</code><br>
+                🏥 医療: <code>medical_takahashi</code><br>
+                🎓 教育: <code>edu_kobayashi</code>
             </small>
         </div>
     </div>
@@ -93,7 +100,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = data.is_admin ? '/admin' : '/dashboard';
+                    window.location.href = data.is_admin ? '/admin' : '/courses';
                 } else {
                     errorAlert.textContent = 'ユーザー名またはパスワードが正しくありません';
                     errorAlert.style.display = 'block';

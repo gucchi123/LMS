@@ -206,6 +206,9 @@ Secret Keyの生成方法（ローカルPythonで実行）:
 import secrets
 print(secrets.token_hex(32))
 ```
+Key
+6d616201a259ea3b252ec26e501530b94078cfba27bbafd15cc6f97d651ae929
+
 
 4. 「Save」をクリック
 
