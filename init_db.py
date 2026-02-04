@@ -111,16 +111,18 @@ def init_database():
     )
     ''')
     
-    # Videosテーブル作成（slug追加）
+    # Videosテーブル作成（slug追加、transcription_status追加）
     cursor.execute('''
     CREATE TABLE videos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         slug TEXT UNIQUE,
         description TEXT,
+        summary TEXT,
         filename TEXT NOT NULL,
         category_id INTEGER,
         uploaded_by INTEGER,
+        transcription_status TEXT DEFAULT 'none',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (category_id) REFERENCES categories (id),
         FOREIGN KEY (uploaded_by) REFERENCES users (id)

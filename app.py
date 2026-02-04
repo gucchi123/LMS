@@ -8,6 +8,15 @@ import json
 import re
 import unicodedata
 from datetime import datetime
+import threading
+
+# Whisper（オプション - ローカル環境のみ）
+WHISPER_AVAILABLE = False
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+except ImportError:
+    pass  # Whisperがインストールされていない環境（PythonAnywhereなど）
 
 # 環境変数読み込み（dotenvがある場合のみ）
 try:
@@ -39,6 +48,27 @@ def get_db():
     db = sqlite3.connect('lms.db')
     db.row_factory = sqlite3.Row
     return db
+
+# データベースマイグレーション（transcription_status, summaryカラム追加）
+def migrate_transcription_columns():
+    """既存のDBにtranscription_statusとsummaryカラムを追加"""
+    db = get_db()
+    cursor = db.cursor()
+    
+    # カラムの存在確認
+    cursor.execute("PRAGMA table_info(videos)")
+    columns = [col[1] for col in cursor.fetchall()]
+    
+    if 'transcription_status' not in columns:
+        cursor.execute("ALTER TABLE videos ADD COLUMN transcription_status TEXT DEFAULT 'none'")
+        print("[Migration] Added transcription_status column to videos table")
+    
+    if 'summary' not in columns:
+        cursor.execute("ALTER TABLE videos ADD COLUMN summary TEXT")
+        print("[Migration] Added summary column to videos table")
+    
+    db.commit()
+    db.close()
 
 # スラッグ生成関数（日本語→ローマ字変換対応）
 _kakasi = None
@@ -995,20 +1025,57 @@ def get_chat_history():
     return jsonify(result)
 
 # RAG検索: ビデオと説明から関連コンテンツを検索
-def search_relevant_content(db, question, industry_id):
-    """質問に関連するコンテンツを検索"""
-    keywords = question.lower().split()
+def extract_keywords(text):
+    """日本語・英語のテキストからキーワードを抽出"""
+    # 日本語の助詞・助動詞・記号を削除してキーワードを抽出
+    stopwords = {'の', 'は', 'が', 'を', 'に', 'で', 'と', 'も', 'や', 'か', 'から', 'まで', 'より', 
+                 'など', 'について', 'という', 'ような', 'どのような', 'ありますか', 'ですか', 
+                 'ください', 'できますか', 'でしょうか', 'ものが', 'こと', 'もの', 'ます', 'です',
+                 'どう', 'なに', 'どこ', 'いつ', 'だれ', 'なぜ', 'どれ', 'する', 'ある', 'いる',
+                 'これ', 'それ', 'あれ', 'この', 'その', 'あの', 'ここ', 'そこ', 'あそこ',
+                 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+                 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
+                 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'}
     
-    # ビデオを検索（タイトルと説明文）
+    # 記号・句読点・助詞で分割
+    tokens = re.split(r'[\s、。！？!?・,.\-\(\)（）「」『』\[\]【】のはがをにでともやか]+', text.lower())
+    
+    # 2文字以上のキーワードを抽出
+    keywords = []
+    for token in tokens:
+        token = token.strip()
+        if len(token) >= 2 and token not in stopwords:
+            keywords.append(token)
+    
+    # 重要なキーワードを優先（長いものを先に）
+    keywords.sort(key=len, reverse=True)
+    
+    return keywords[:8]  # 最大8キーワード
+
+def search_relevant_content(db, question, industry_id, is_admin=False):
+    """質問に関連するコンテンツを検索（業種別アクセス制御付き）"""
+    keywords = extract_keywords(question)
+    
+    # アクセス可能なカテゴリーIDを取得（業種別アクセス制御）
+    accessible_category_ids = get_accessible_category_ids(db, industry_id, is_admin)
+    
+    # ビデオを検索（タイトルと説明文）- アクセス制御適用
     videos = []
     for keyword in keywords[:5]:  # 最初の5キーワードで検索
-        search_results = db.execute('''
-            SELECT DISTINCT v.id, v.title, v.description, c.name as category_name
-            FROM videos v
-            LEFT JOIN categories c ON v.category_id = c.id
-            WHERE LOWER(v.title) LIKE ? OR LOWER(v.description) LIKE ?
-            LIMIT 5
-        ''', (f'%{keyword}%', f'%{keyword}%')).fetchall()
+        if accessible_category_ids:
+            # アクセス可能なカテゴリーの動画のみ検索
+            placeholders = ','.join('?' * len(accessible_category_ids))
+            search_results = db.execute(f'''
+                SELECT DISTINCT v.id, v.title, v.description, c.name as category_name
+                FROM videos v
+                LEFT JOIN categories c ON v.category_id = c.id
+                WHERE (LOWER(v.title) LIKE ? OR LOWER(v.description) LIKE ?)
+                AND (v.category_id IS NULL OR v.category_id IN ({placeholders}))
+                LIMIT 5
+            ''', (f'%{keyword}%', f'%{keyword}%', *accessible_category_ids)).fetchall()
+        else:
+            # アクセス可能なカテゴリーがない場合は空
+            search_results = []
         videos.extend([dict(v) for v in search_results])
     
     # 重複を除去
@@ -1019,16 +1086,22 @@ def search_relevant_content(db, question, industry_id):
             seen_ids.add(v['id'])
             unique_videos.append(v)
     
-    # トランスクリプトを検索
+    # トランスクリプトを検索（アクセス制御適用）
     transcripts = []
     for keyword in keywords[:3]:
-        transcript_results = db.execute('''
-            SELECT vt.content, v.id as video_id, v.title as video_title
-            FROM video_transcripts vt
-            JOIN videos v ON vt.video_id = v.id
-            WHERE LOWER(vt.content) LIKE ?
-            LIMIT 3
-        ''', (f'%{keyword}%',)).fetchall()
+        if accessible_category_ids:
+            placeholders = ','.join('?' * len(accessible_category_ids))
+            transcript_results = db.execute(f'''
+                SELECT vt.content, v.id as video_id, v.title as video_title
+                FROM video_transcripts vt
+                JOIN videos v ON vt.video_id = v.id
+                LEFT JOIN categories c ON v.category_id = c.id
+                WHERE LOWER(vt.content) LIKE ?
+                AND (v.category_id IS NULL OR v.category_id IN ({placeholders}))
+                LIMIT 3
+            ''', (f'%{keyword}%', *accessible_category_ids)).fetchall()
+        else:
+            transcript_results = []
         transcripts.extend([dict(t) for t in transcript_results])
     
     # ユースケースを検索
@@ -1138,9 +1211,10 @@ def chat_api():
     db = get_db()
     industry_id = session.get('industry_id')
     industry_name = session.get('industry_name', '全業種')
+    is_admin = session.get('is_admin', False)
     
-    # RAG検索で関連コンテンツを取得
-    relevant = search_relevant_content(db, message, industry_id)
+    # RAG検索で関連コンテンツを取得（業種別アクセス制御適用）
+    relevant = search_relevant_content(db, message, industry_id, is_admin)
     
     # コンテキストを構築
     context_parts = []
@@ -1237,6 +1311,214 @@ def update_video_transcript(video_id):
     
     return jsonify({'success': True, 'message': 'トランスクリプトを保存しました'})
 
+# ========== 自動文字起こし機能 ==========
+
+def transcribe_video_async(video_id, video_path):
+    """バックグラウンドで動画を文字起こし"""
+    if not WHISPER_AVAILABLE:
+        print("[Whisper] Whisper is not available")
+        return
+    
+    # 絶対パスを取得（バックグラウンドスレッドでも正しく動作するように）
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, 'lms.db')
+    
+    try:
+        # ステータスを「処理中」に更新
+        db = sqlite3.connect(db_path)
+        db.row_factory = sqlite3.Row
+        db.execute('UPDATE videos SET transcription_status = ? WHERE id = ?', ('processing', video_id))
+        db.commit()
+        
+        print(f"[Whisper] Starting transcription: {video_path}")
+        
+        # ffmpegのパスを設定（ローカルにある場合）
+        local_ffmpeg = os.path.join(base_dir, 'ffmpeg.exe')
+        if os.path.exists(local_ffmpeg):
+            os.environ['PATH'] = os.path.dirname(local_ffmpeg) + os.pathsep + os.environ.get('PATH', '')
+            print(f"[Whisper] Using local ffmpeg: {local_ffmpeg}")
+        
+        # Whisperモデルをロード（medium推奨）
+        model = whisper.load_model("medium")
+        
+        # 文字起こし実行
+        result = model.transcribe(
+            video_path,
+            language='ja',
+            verbose=False,
+            temperature=0,
+            condition_on_previous_text=True
+        )
+        
+        transcript_text = result['text']
+        print(f"[Whisper] Transcription completed: {len(transcript_text)} characters")
+        
+        # トランスクリプトをDBに保存
+        db.execute('DELETE FROM video_transcripts WHERE video_id = ? AND content_type = ?', 
+                   (video_id, 'transcript'))
+        db.execute('''
+            INSERT INTO video_transcripts (video_id, content, content_type)
+            VALUES (?, ?, ?)
+        ''', (video_id, transcript_text, 'transcript'))
+        
+        # 概要を生成（Rakuten AI 3.0を使用）
+        summary = generate_video_summary(transcript_text)
+        
+        # ステータスを「完了」に更新、概要を保存
+        db.execute('UPDATE videos SET transcription_status = ?, summary = ? WHERE id = ?', 
+                   ('completed', summary, video_id))
+        db.commit()
+        db.close()
+        
+        print(f"[Whisper] Processing complete: video_id={video_id}")
+        
+    except Exception as e:
+        print(f"[Whisper] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        # ステータスを「失敗」に更新
+        try:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.join(base_dir, 'lms.db')
+            db = sqlite3.connect(db_path)
+            db.execute('UPDATE videos SET transcription_status = ? WHERE id = ?', ('failed', video_id))
+            db.commit()
+            db.close()
+        except:
+            pass
+
+def generate_video_summary(transcript_text):
+    """トランスクリプトから概要を生成（Rakuten AI 3.0使用）"""
+    if not RAKUTEN_AI_API_KEY:
+        return None
+    
+    try:
+        # トランスクリプトが長すぎる場合は切り詰め
+        max_length = 3000
+        if len(transcript_text) > max_length:
+            transcript_text = transcript_text[:max_length] + "..."
+        
+        headers = {
+            "Authorization": f"Bearer {RAKUTEN_AI_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        messages = [
+            {
+                "role": "system",
+                "content": "あなたは動画コンテンツの概要を作成する専門家です。与えられた文字起こしテキストから、簡潔で分かりやすい概要を日本語で作成してください。概要は3〜5文程度にまとめてください。"
+            },
+            {
+                "role": "user",
+                "content": f"以下の動画の文字起こしテキストから概要を作成してください：\n\n{transcript_text}"
+            }
+        ]
+        
+        payload = {
+            "model": RAKUTEN_AI_MODEL,
+            "messages": messages,
+            "temperature": 0.3,
+            "max_tokens": 500
+        }
+        
+        with httpx.Client(verify=False, timeout=60.0) as client:
+            response = client.post(
+                f"{RAKUTEN_AI_BASE_URL}chat/completions",
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content']
+            else:
+                print(f"概要生成API エラー: {response.status_code}")
+                return None
+                
+    except Exception as e:
+        print(f"概要生成エラー: {e}")
+        return None
+
+# 文字起こし開始API
+@app.route('/api/admin/videos/<int:video_id>/transcribe', methods=['POST'])
+@admin_required
+def start_transcription(video_id):
+    if not WHISPER_AVAILABLE:
+        return jsonify({
+            'success': False, 
+            'error': 'Whisperがインストールされていません。ローカル環境でのみ利用可能です。'
+        }), 400
+    
+    db = get_db()
+    video = db.execute('SELECT id, filename, transcription_status FROM videos WHERE id = ?', (video_id,)).fetchone()
+    
+    if not video:
+        return jsonify({'success': False, 'error': 'ビデオが見つかりません'}), 404
+    
+    if video['transcription_status'] == 'processing':
+        return jsonify({'success': False, 'error': '既に処理中です'}), 400
+    
+    # 動画ファイルのパス（絶対パスを使用）
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    video_path = os.path.join(base_dir, app.config['UPLOAD_FOLDER'], video['filename'])
+    if not os.path.exists(video_path):
+        return jsonify({'success': False, 'error': '動画ファイルが見つかりません'}), 404
+    
+    # ステータスを「pending」に更新
+    db.execute('UPDATE videos SET transcription_status = ? WHERE id = ?', ('pending', video_id))
+    db.commit()
+    
+    # バックグラウンドで文字起こしを開始
+    thread = threading.Thread(target=transcribe_video_async, args=(video_id, video_path))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({
+        'success': True, 
+        'message': '文字起こしを開始しました。処理には数分かかる場合があります。'
+    })
+
+# 文字起こしステータス確認API
+@app.route('/api/admin/videos/<int:video_id>/transcript-status')
+@admin_required
+def get_transcription_status(video_id):
+    db = get_db()
+    video = db.execute('SELECT transcription_status, summary FROM videos WHERE id = ?', (video_id,)).fetchone()
+    
+    if not video:
+        return jsonify({'success': False, 'error': 'ビデオが見つかりません'}), 404
+    
+    return jsonify({
+        'success': True,
+        'status': video['transcription_status'] or 'none',
+        'summary': video['summary']
+    })
+
+# ユーザー向け文字起こし取得API
+@app.route('/api/videos/<int:video_id>/transcript')
+@login_required
+def get_video_transcript(video_id):
+    db = get_db()
+    
+    # 動画情報を取得
+    video = db.execute('SELECT id, summary, transcription_status FROM videos WHERE id = ?', (video_id,)).fetchone()
+    if not video:
+        return jsonify({'success': False, 'error': 'ビデオが見つかりません'}), 404
+    
+    # トランスクリプトを取得
+    transcript = db.execute('''
+        SELECT content FROM video_transcripts 
+        WHERE video_id = ? AND content_type = 'transcript'
+        ORDER BY created_at DESC LIMIT 1
+    ''', (video_id,)).fetchone()
+    
+    return jsonify({
+        'success': True,
+        'summary': video['summary'],
+        'transcript': transcript['content'] if transcript else None,
+        'status': video['transcription_status'] or 'none'
+    })
+
 # ユースケース追加API
 @app.route('/api/admin/usecases', methods=['POST'])
 @admin_required
@@ -1321,6 +1603,8 @@ if __name__ == '__main__':
     else:
         # 既存データにスラッグを自動生成
         migrate_slugs()
+        # 文字起こし用カラムを追加（マイグレーション）
+        migrate_transcription_columns()
     
     # ポート番号を環境変数から取得（デプロイ環境対応）
     port = int(os.environ.get('PORT', 5000))

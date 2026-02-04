@@ -6,3 +6,21 @@ videos/*
 .env
 *.log
 .DS_Store
+# ä¸€æ™‚çš„ãªã‚¹ã‚¯ãƒªãƒ—ãƒˆ
+analyze_*.py
+apply_*.py
+check_*.py
+find_*.py
+restore_original.py
+reset_status.py
+test_whisper.py
+
+# ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«
+temp_*.pptx
+*.wmf
+footer_image_*.png
+layout*_shape*.png
+layout*_shape*.wmf
+
+# ãƒã‚¤ãƒŠãƒª
+ffmpeg.exe

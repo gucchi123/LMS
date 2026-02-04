@@ -17,6 +17,8 @@
 - 📤 動画のアップロード（MP4, AVI, MOV, MKV, WebM対応）
 - ✏️ 動画情報の編集
 - 🗑️ 動画の削除
+- 🎤 **AI自動文字起こし**（Whisper使用）
+- 📝 動画トランスクリプトと概要の自動生成
 - 📁 カテゴリー管理（階層構造対応）
 - 🏭 **業種管理**（追加・編集・削除）
 - 🔐 **カテゴリーアクセス制御**（業種別に公開設定）
@@ -79,6 +81,34 @@ python app.py
 
 ブラウザで http://localhost:5000 にアクセスします。
 
+### 4. 文字起こし機能を使用する場合（オプション）
+
+文字起こし機能を使用するには**ffmpeg**が必要です：
+
+#### 方法1: ローカルにffmpegを配置（推奨）
+既に`ffmpeg.exe`がLMSフォルダに配置されていれば、自動的に使用されます。
+
+#### 方法2: システム全体にインストール
+Chocolateyを使用:
+```powershell
+choco install ffmpeg
+```
+
+または、手動でダウンロードして環境変数PATHに追加:
+1. https://ffmpeg.org/download.html からダウンロード
+2. 適切な場所に展開
+3. 環境変数PATHに追加
+
+**文字起こしのテスト:**
+```bash
+python test_whisper.py
+```
+
+**失敗したステータスをリセット:**
+```bash
+python reset_status.py
+```
+
 ## デフォルトアカウント
 
 初期化後、以下のアカウントが利用可能です：
@@ -135,10 +165,14 @@ python app.py
 ├── app.py                          # メインアプリケーション
 ├── init_db.py                      # データベース初期化スクリプト
 ├── test_app.py                     # テストスイート
+├── test_whisper.py                 # Whisper文字起こしテスト
+├── reset_status.py                 # 文字起こしステータスリセット
 ├── requirements.txt                # 依存パッケージ
+├── ffmpeg.exe                      # 文字起こし用（オプション）
 ├── README.md                       # このファイル
 ├── QUICKSTART.md                   # クイックスタートガイド
 ├── DEPLOYMENT.md                   # デプロイガイド
+├── fix_transcription.md            # 文字起こし問題の修正ガイド
 ├── lms.db                          # SQLiteデータベース（自動生成）
 ├── videos/                         # 動画ファイル保存先（自動生成）
 │   └── *.mp4
@@ -301,6 +335,13 @@ python -m pytest test_app.py -v
 ### カテゴリーが表示されない
 - ログインユーザーの業種とカテゴリーのアクセス設定を確認
 - 管理画面でアクセス制御設定を確認
+
+### 文字起こしが失敗する
+- **原因**: ffmpegがインストールされていない、またはPATHが通っていない
+- **解決策1**: LMSフォルダに`ffmpeg.exe`を配置（推奨）
+- **解決策2**: システム全体にffmpegをインストール（`choco install ffmpeg`）
+- **テスト**: `python test_whisper.py`を実行してffmpegが正常に動作するか確認
+- **リセット**: `python reset_status.py`で失敗ステータスをリセット
 
 ## カスタマイズ
 

@@ -200,6 +200,7 @@
                             <th>タイトル</th>
                             <th>カテゴリー</th>
                             <th>説明</th>
+                            <th>文字起こし</th>
                             <th>アップロード日</th>
                             <th>操作</th>
                         </tr>
@@ -217,6 +218,26 @@
                                 {% endif %}
                             </td>
                             <td>{{ video.description or '-' }}</td>
+                            <td>
+                                <span id="transcription-status-{{ video.id }}">
+                                    {% if video.transcription_status == 'completed' %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> 完了</span>
+                                    {% elif video.transcription_status == 'processing' %}
+                                    <span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> 処理中</span>
+                                    {% elif video.transcription_status == 'pending' %}
+                                    <span class="badge bg-info"><i class="bi bi-clock"></i> 待機中</span>
+                                    {% elif video.transcription_status == 'failed' %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> 失敗</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">未実行</span>
+                                    {% endif %}
+                                </span>
+                                <button class="btn btn-sm btn-outline-primary ms-1" onclick="startTranscription({{ video.id }})" 
+                                        id="transcribe-btn-{{ video.id }}"
+                                        {% if video.transcription_status == 'processing' %}disabled{% endif %}>
+                                    <i class="bi bi-mic"></i>
+                                </button>
+                            </td>
                             <td>{{ video.created_at.split('.')[0] if '.' in video.created_at else video.created_at }}</td>
                             <td>
                                 <button class="btn btn-sm btn-primary" onclick="editVideo({{ video.id }}, '{{ video.title }}', '{{ video.description or '' }}', {{ video.category_id or 'null' }})">
@@ -744,6 +765,71 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 文字起こし開始
+        async function startTranscription(videoId) {
+            if (!confirm('文字起こしを開始しますか？処理には数分かかる場合があります。')) {
+                return;
+            }
+            
+            const statusSpan = document.getElementById(`transcription-status-${videoId}`);
+            const btn = document.getElementById(`transcribe-btn-${videoId}`);
+            
+            // ボタンを無効化、ステータスを更新
+            btn.disabled = true;
+            statusSpan.innerHTML = '<span class="badge bg-info"><i class="bi bi-clock"></i> 待機中</span>';
+            
+            try {
+                const response = await fetch(`/api/admin/videos/${videoId}/transcribe`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusSpan.innerHTML = '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> 処理中</span>';
+                    // ステータスをポーリング
+                    pollTranscriptionStatus(videoId);
+                } else {
+                    alert('エラー: ' + data.error);
+                    statusSpan.innerHTML = '<span class="badge bg-secondary">未実行</span>';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert('エラーが発生しました: ' + error);
+                statusSpan.innerHTML = '<span class="badge bg-secondary">未実行</span>';
+                btn.disabled = false;
+            }
+        }
+        
+        // 文字起こしステータスをポーリング
+        function pollTranscriptionStatus(videoId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/admin/videos/${videoId}/transcript-status`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const statusSpan = document.getElementById(`transcription-status-${videoId}`);
+                        const btn = document.getElementById(`transcribe-btn-${videoId}`);
+                        
+                        if (data.status === 'completed') {
+                            statusSpan.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> 完了</span>';
+                            btn.disabled = false;
+                            clearInterval(interval);
+                        } else if (data.status === 'failed') {
+                            statusSpan.innerHTML = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> 失敗</span>';
+                            btn.disabled = false;
+                            clearInterval(interval);
+                        } else if (data.status === 'processing') {
+                            statusSpan.innerHTML = '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> 処理中</span>';
+                        }
+                    }
+                } catch (error) {
+                    console.error('ステータス確認エラー:', error);
+                }
+            }, 5000); // 5秒ごとにチェック
+        }
+        
         // 動画アップロード
         async function uploadVideo() {
             const title = document.getElementById('videoTitle').value;
