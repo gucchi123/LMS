@@ -6,6 +6,7 @@ import sys
 import re
 import unicodedata
 import pykakasi
+import argparse
 
 # Windows環境での日本語出力対応
 if sys.platform == 'win32':
@@ -80,7 +81,33 @@ def init_database():
     )
     ''')
     
-    # Usersテーブル作成（industry_id, company_name追加）
+    # Tenantsテーブル作成（会社/テナント管理）
+    cursor.execute('''
+    CREATE TABLE tenants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        industry_id INTEGER,
+        logo TEXT,
+        settings TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (industry_id) REFERENCES industries (id)
+    )
+    ''')
+    
+    # Departmentsテーブル作成（部署管理）
+    cursor.execute('''
+    CREATE TABLE departments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        parent_department_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id),
+        FOREIGN KEY (parent_department_id) REFERENCES departments (id)
+    )
+    ''')
+    
+    # Usersテーブル作成（tenant_id, department_id, role追加）
     cursor.execute('''
     CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,10 +115,15 @@ def init_database():
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         industry_id INTEGER,
+        tenant_id INTEGER,
+        department_id INTEGER,
         company_name TEXT,
+        role TEXT DEFAULT 'user',
         is_admin INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (industry_id) REFERENCES industries (id)
+        FOREIGN KEY (industry_id) REFERENCES industries (id),
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id),
+        FOREIGN KEY (department_id) REFERENCES departments (id)
     )
     ''')
     
@@ -202,6 +234,26 @@ def init_database():
     )
     ''')
     
+    # Access_Logsテーブル作成（カスタムアクセス分析）
+    cursor.execute('''
+    CREATE TABLE access_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        tenant_id INTEGER,
+        path TEXT NOT NULL,
+        method TEXT DEFAULT 'GET',
+        status_code INTEGER,
+        user_agent TEXT,
+        ip_address TEXT,
+        referrer TEXT,
+        duration_ms INTEGER,
+        extra TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+    )
+    ''')
+    
     # ========== 業種マスタを作成 ==========
     industries_data = [
         ('宿泊', 'Accommodation', '宿泊業・ホテル・旅館', 'bi-house-door', '#e63946'),
@@ -221,66 +273,102 @@ def init_database():
     
     print("業種マスタを作成しました")
     
+    # ========== サンプルテナントを作成 ==========
+    tenants_data = [
+        ('グランドホテル東京', industry_ids['宿泊']),
+        ('湯元旅館', industry_ids['宿泊']),
+        ('スーパーマート', industry_ids['小売']),
+        ('ファッションストア', industry_ids['小売']),
+        ('さくらレストラン', industry_ids['飲食']),
+        ('スマイルケアセンター', industry_ids['介護']),
+        ('セントラルクリニック', industry_ids['医療']),
+        ('ブライトアカデミー', industry_ids['教育']),
+    ]
+    
+    tenant_ids = {}
+    for name, ind_id in tenants_data:
+        cursor.execute('''
+        INSERT INTO tenants (name, industry_id) VALUES (?, ?)
+        ''', (name, ind_id))
+        tenant_ids[name] = cursor.lastrowid
+    
+    print("サンプルテナントを作成しました")
+    
+    # ========== サンプル部署を作成 ==========
+    # グランドホテル東京
+    cursor.execute("INSERT INTO departments (tenant_id, name) VALUES (?, ?)", (tenant_ids['グランドホテル東京'], 'フロント課'))
+    dept_front = cursor.lastrowid
+    cursor.execute("INSERT INTO departments (tenant_id, name) VALUES (?, ?)", (tenant_ids['グランドホテル東京'], '営業部'))
+    dept_sales_hotel = cursor.lastrowid
+    
+    # スーパーマート
+    cursor.execute("INSERT INTO departments (tenant_id, name) VALUES (?, ?)", (tenant_ids['スーパーマート'], '販売部'))
+    dept_sales_mart = cursor.lastrowid
+    cursor.execute("INSERT INTO departments (tenant_id, name) VALUES (?, ?)", (tenant_ids['スーパーマート'], 'バイヤー部'))
+    dept_buyer = cursor.lastrowid
+    
+    print("サンプル部署を作成しました")
+    
     # ========== サンプルユーザーを作成 ==========
-    # 管理者アカウント（業種なし - 全アクセス可能）
+    # super_admin（楽天管理者 - 全テナント横断）
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ''', ('admin', 'admin@example.com', generate_password_hash('admin123'), None, None, 1))
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', ('admin', 'admin@example.com', generate_password_hash('admin123'), None, None, None, None, 'super_admin', 1))
     
-    # 宿泊業ユーザー
+    # 宿泊業ユーザー（company_admin + user）
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('hotel_tanaka', 'tanaka@grandhotel.co.jp', generate_password_hash('user123'), 
-          industry_ids['宿泊'], 'グランドホテル東京', 0))
+          industry_ids['宿泊'], tenant_ids['グランドホテル東京'], dept_front, 'グランドホテル東京', 'company_admin', 0))
     
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('ryokan_suzuki', 'suzuki@yumoto-ryokan.jp', generate_password_hash('user123'), 
-          industry_ids['宿泊'], '湯元旅館', 0))
+          industry_ids['宿泊'], tenant_ids['湯元旅館'], None, '湯元旅館', 'user', 0))
     
-    # 小売業ユーザー
+    # 小売業ユーザー（company_admin + user）
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('retail_yamada', 'yamada@supermart.co.jp', generate_password_hash('user123'), 
-          industry_ids['小売'], 'スーパーマート', 0))
+          industry_ids['小売'], tenant_ids['スーパーマート'], dept_sales_mart, 'スーパーマート', 'company_admin', 0))
     
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('shop_sato', 'sato@fashion-store.jp', generate_password_hash('user123'), 
-          industry_ids['小売'], 'ファッションストア', 0))
+          industry_ids['小売'], tenant_ids['ファッションストア'], None, 'ファッションストア', 'user', 0))
     
     # 飲食業ユーザー
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('restaurant_ito', 'ito@sakura-restaurant.jp', generate_password_hash('user123'), 
-          industry_ids['飲食'], 'さくらレストラン', 0))
+          industry_ids['飲食'], tenant_ids['さくらレストラン'], None, 'さくらレストラン', 'user', 0))
     
     # 介護業ユーザー
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('care_watanabe', 'watanabe@smile-care.jp', generate_password_hash('user123'), 
-          industry_ids['介護'], 'スマイルケアセンター', 0))
+          industry_ids['介護'], tenant_ids['スマイルケアセンター'], None, 'スマイルケアセンター', 'user', 0))
     
     # 医療業ユーザー
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('medical_takahashi', 'takahashi@central-clinic.jp', generate_password_hash('user123'), 
-          industry_ids['医療'], 'セントラルクリニック', 0))
+          industry_ids['医療'], tenant_ids['セントラルクリニック'], None, 'セントラルクリニック', 'user', 0))
     
     # 教育業ユーザー
     cursor.execute('''
-    INSERT INTO users (username, email, password_hash, industry_id, company_name, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, email, password_hash, industry_id, tenant_id, department_id, company_name, role, is_admin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('edu_kobayashi', 'kobayashi@bright-academy.jp', generate_password_hash('user123'), 
-          industry_ids['教育'], 'ブライトアカデミー', 0))
+          industry_ids['教育'], tenant_ids['ブライトアカデミー'], None, 'ブライトアカデミー', 'user', 0))
     
     print("サンプルユーザーを作成しました")
     
@@ -503,4 +591,43 @@ def init_database():
     print("\n" + "=" * 60 + "\n")
 
 if __name__ == '__main__':
-    init_database()
+    parser = argparse.ArgumentParser(description='LMS データベース初期化')
+    parser.add_argument('--force', action='store_true', 
+                        help='既存データベースを完全にリセット（注意：全データが消えます）')
+    parser.add_argument('--migrate', action='store_true',
+                        help='差分マイグレーションのみ実行（デフォルト動作）')
+    args = parser.parse_args()
+    
+    if args.force:
+        # 強制リセットモード
+        print("\n" + "!" * 60)
+        print("  警告: --force モードが指定されました")
+        print("  既存のデータベースは完全に削除され、再構築されます。")
+        print("!" * 60)
+        
+        # バックアップを作成
+        if os.path.exists('lms.db'):
+            from migrate_db import create_backup
+            backup_path = create_backup()
+            if backup_path:
+                print(f"  バックアップ: {backup_path}")
+        
+        confirm = input("\n  本当に実行しますか？ (yes/no): ").strip().lower()
+        if confirm == 'yes':
+            init_database()
+            # マイグレーションバージョンを記録
+            from migrate_db import MIGRATIONS, ensure_migration_table, mark_migration
+            conn = sqlite3.connect('lms.db')
+            cursor = conn.cursor()
+            ensure_migration_table(cursor)
+            for version, description, _ in MIGRATIONS:
+                mark_migration(cursor, version, description)
+            conn.commit()
+            conn.close()
+            print("  マイグレーションバージョンを最新に設定しました")
+        else:
+            print("  キャンセルしました。データベースは変更されていません。")
+    else:
+        # デフォルト: 差分マイグレーションモード
+        from migrate_db import run_migrations
+        run_migrations()

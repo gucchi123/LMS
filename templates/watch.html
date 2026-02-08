@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ video.title }} - LMS</title>
+    {% include 'ga4_tracking.html' %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
@@ -66,14 +67,72 @@
             gap: 10px;
             color: #6c757d;
         }
+        /* Q&A styles */
+        .qa-post-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .qa-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: white;
+        }
+        .qa-item:hover {
+            border-color: var(--primary-color);
+        }
+        .qa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .qa-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .qa-text {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .answer-item {
+            background: #f8f9fa;
+            border-left: 3px solid var(--primary-color);
+            padding: 10px 15px;
+            margin: 8px 0 8px 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        .answer-item.admin-answer {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        .admin-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+        }
+        .btn-gradient:hover {
+            opacity: 0.9;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <!-- ナビゲーションバー -->
     <nav class="navbar navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-book"></i> LMS
+            <a class="navbar-brand" href="/courses">
+                <i class="bi bi-mortarboard-fill"></i> Rakuten AI for Business トレーニング
             </a>
             <div class="d-flex align-items-center">
                 <span class="text-white me-3">
@@ -127,6 +186,12 @@
                     <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress-pane" 
                             type="button" role="tab" aria-controls="progress-pane" aria-selected="false">
                         <i class="bi bi-bar-chart"></i> 視聴進捗
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="qa-tab" data-bs-toggle="tab" data-bs-target="#qa-pane" 
+                            type="button" role="tab" aria-controls="qa-pane" aria-selected="false">
+                        <i class="bi bi-chat-dots"></i> Q&A <span id="qaCount" class="badge bg-secondary ms-1" style="display:none;">0</span>
                     </button>
                 </li>
             </ul>
@@ -183,10 +248,37 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Q&Aタブ -->
+                <div class="tab-pane fade" id="qa-pane" role="tabpanel" aria-labelledby="qa-tab">
+                    <!-- 質問投稿フォーム -->
+                    <div class="qa-post-form mb-4">
+                        <h6><i class="bi bi-pencil-square"></i> 質問を投稿</h6>
+                        <div class="input-group">
+                            <textarea class="form-control" id="questionText" rows="2" 
+                                      placeholder="この動画について質問があればここに入力してください..." maxlength="2000"></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted"><span id="questionCharCount">0</span>/2000文字</small>
+                            <button class="btn btn-sm btn-gradient" onclick="postQuestion()">
+                                <i class="bi bi-send"></i> 質問を投稿
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 質問一覧 -->
+                    <div id="qaList">
+                        <div class="text-center text-muted py-3" id="qaLoading">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span>読み込み中...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
     <script>
         const videoId = {{ video.id }};
@@ -238,6 +330,10 @@
                         })
                     });
                     console.log('進捗を保存しました:', progressPercent.toFixed(1) + '%');
+                    // GA4 progress milestone tracking
+                    if (window.lmsAnalytics) {
+                        lmsAnalytics.trackVideoProgress(videoId, '{{ video.title }}', progressPercent);
+                    }
                 } catch (error) {
                     console.error('進捗の保存に失敗しました:', error);
                 }
@@ -261,9 +357,19 @@
             }
         }
 
+        // 動画再生開始イベント（GA4）
+        player.on('play', function() {
+            if (window.lmsAnalytics) {
+                lmsAnalytics.trackVideoPlay(videoId, '{{ video.title }}');
+            }
+        });
+
         // 動画終了時にも保存
         player.on('ended', function() {
             saveProgress();
+            if (window.lmsAnalytics) {
+                lmsAnalytics.trackVideoComplete(videoId, '{{ video.title }}');
+            }
             alert('動画の視聴が完了しました！');
         });
 
@@ -345,6 +451,350 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // ========== Q&A機能 ==========
+        const currentUserId = {{ session.user_id }};
+        const currentRole = '{{ session.role | default("user") }}';
+        let qaLoaded = false;
+        
+        // Q&Aタブクリック時に読み込み
+        document.getElementById('qa-tab').addEventListener('click', function() {
+            if (!qaLoaded) {
+                loadQuestions();
+            }
+        });
+        
+        // 質問文字数カウント
+        document.getElementById('questionText').addEventListener('input', function() {
+            document.getElementById('questionCharCount').textContent = this.value.length;
+        });
+        
+        // 質問一覧を読み込み
+        async function loadQuestions() {
+            try {
+                const response = await fetch(`/api/videos/${videoId}/questions`);
+                const data = await response.json();
+                
+                const qaLoading = document.getElementById('qaLoading');
+                const qaList = document.getElementById('qaList');
+                const qaCount = document.getElementById('qaCount');
+                
+                if (qaLoading) qaLoading.style.display = 'none';
+                
+                if (data.success && data.questions.length > 0) {
+                    qaCount.textContent = data.questions.length;
+                    qaCount.style.display = 'inline';
+                    
+                    let html = '';
+                    data.questions.forEach(q => {
+                        html += renderQuestion(q);
+                    });
+                    qaList.innerHTML = html;
+                } else {
+                    qaList.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-chat-dots" style="font-size: 2rem;"></i>
+                            <p class="mt-2">まだ質問がありません。最初の質問を投稿しましょう！</p>
+                        </div>`;
+                    qaCount.style.display = 'none';
+                }
+                qaLoaded = true;
+            } catch (error) {
+                console.error('Q&A読み込みエラー:', error);
+                document.getElementById('qaList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Q&Aの読み込みに失敗しました。
+                    </div>`;
+            }
+        }
+        
+        // 質問をレンダリング
+        function renderQuestion(q) {
+            const canDelete = (currentRole === 'super_admin') || 
+                              (currentRole === 'company_admin') || 
+                              (q.user_id === currentUserId);
+            const canEdit = (q.user_id === currentUserId);
+            const editBtn = canEdit 
+                ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editQuestion(${q.id})" title="編集" id="edit-btn-q-${q.id}"><i class="bi bi-pencil"></i></button>` 
+                : '';
+            const deleteBtn = canDelete 
+                ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteQuestion(${q.id})" title="削除"><i class="bi bi-trash"></i></button>` 
+                : '';
+            
+            let answersHtml = '';
+            if (q.answers && q.answers.length > 0) {
+                q.answers.forEach(a => {
+                    const aCanDelete = (currentRole === 'super_admin') || 
+                                       (currentRole === 'company_admin') || 
+                                       (a.user_id === currentUserId);
+                    const aCanEdit = (a.user_id === currentUserId);
+                    const aEditBtn = aCanEdit 
+                        ? `<button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1" onclick="editAnswer(${a.id})" title="編集" id="edit-btn-a-${a.id}"><i class="bi bi-pencil"></i></button>` 
+                        : '';
+                    const aDeleteBtn = aCanDelete 
+                        ? `<button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteAnswer(${a.id})" title="削除"><i class="bi bi-trash"></i></button>` 
+                        : '';
+                    const adminBadge = a.is_admin_answer 
+                        ? '<span class="admin-badge ms-1"><i class="bi bi-shield-check"></i> 管理者</span>' 
+                        : '';
+                    
+                    answersHtml += `
+                        <div class="answer-item ${a.is_admin_answer ? 'admin-answer' : ''}" id="answer-${a.id}">
+                            <div class="qa-header">
+                                <span class="qa-meta">
+                                    <i class="bi bi-person"></i> ${escapeHtml(a.username)}${adminBadge}
+                                    <span class="ms-2"><i class="bi bi-clock"></i> ${formatDate(a.created_at)}</span>
+                                </span>
+                                <div>${aEditBtn}${aDeleteBtn}</div>
+                            </div>
+                            <div class="qa-text" id="answer-text-${a.id}">${escapeHtml(a.answer_text)}</div>
+                            <div class="qa-edit-form" id="answer-edit-${a.id}" style="display:none;">
+                                <textarea class="form-control form-control-sm mb-1" id="answer-edit-input-${a.id}" maxlength="2000">${escapeHtml(a.answer_text)}</textarea>
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <button class="btn btn-sm btn-primary" onclick="saveAnswerEdit(${a.id})"><i class="bi bi-check"></i> 保存</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="cancelAnswerEdit(${a.id})"><i class="bi bi-x"></i> キャンセル</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+            
+            return `
+                <div class="qa-item" id="question-${q.id}">
+                    <div class="qa-header">
+                        <span class="qa-meta">
+                            <i class="bi bi-person-circle"></i> <strong>${escapeHtml(q.username)}</strong>
+                            ${q.tenant_name ? '<span class="badge bg-light text-dark ms-1">' + escapeHtml(q.tenant_name) + '</span>' : ''}
+                            <span class="ms-2"><i class="bi bi-clock"></i> ${formatDate(q.created_at)}</span>
+                        </span>
+                        <div>
+                            <span class="badge bg-secondary">${q.answer_count} 回答</span>
+                            ${editBtn}${deleteBtn}
+                        </div>
+                    </div>
+                    <div class="qa-text" id="question-text-${q.id}">${escapeHtml(q.question_text)}</div>
+                    <div class="qa-edit-form" id="question-edit-${q.id}" style="display:none;">
+                        <textarea class="form-control form-control-sm mb-1" id="question-edit-input-${q.id}" maxlength="2000">${escapeHtml(q.question_text)}</textarea>
+                        <div class="d-flex gap-1 justify-content-end">
+                            <button class="btn btn-sm btn-primary" onclick="saveQuestionEdit(${q.id})"><i class="bi bi-check"></i> 保存</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cancelQuestionEdit(${q.id})"><i class="bi bi-x"></i> キャンセル</button>
+                        </div>
+                    </div>
+                    
+                    <div class="answers-section">
+                        ${answersHtml}
+                    </div>
+                    
+                    <div class="mt-2">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="answer-input-${q.id}" 
+                                   placeholder="回答を入力..." maxlength="2000">
+                            <button class="btn btn-outline-primary" onclick="postAnswer(${q.id})">
+                                <i class="bi bi-reply"></i> 回答
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // 質問を投稿
+        async function postQuestion() {
+            const textarea = document.getElementById('questionText');
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                alert('質問内容を入力してください');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/videos/${videoId}/questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question_text: text })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    textarea.value = '';
+                    document.getElementById('questionCharCount').textContent = '0';
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '質問の投稿に失敗しました');
+                }
+            } catch (error) {
+                console.error('質問投稿エラー:', error);
+                alert('質問の投稿に失敗しました');
+            }
+        }
+        
+        // 回答を投稿
+        async function postAnswer(questionId) {
+            const input = document.getElementById(`answer-input-${questionId}`);
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('回答内容を入力してください');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/questions/${questionId}/answers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer_text: text })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '回答の投稿に失敗しました');
+                }
+            } catch (error) {
+                console.error('回答投稿エラー:', error);
+                alert('回答の投稿に失敗しました');
+            }
+        }
+        
+        // 質問を編集モードに切り替え
+        function editQuestion(questionId) {
+            document.getElementById(`question-text-${questionId}`).style.display = 'none';
+            document.getElementById(`question-edit-${questionId}`).style.display = 'block';
+            document.getElementById(`edit-btn-q-${questionId}`).style.display = 'none';
+        }
+        
+        // 質問の編集をキャンセル
+        function cancelQuestionEdit(questionId) {
+            document.getElementById(`question-text-${questionId}`).style.display = 'block';
+            document.getElementById(`question-edit-${questionId}`).style.display = 'none';
+            document.getElementById(`edit-btn-q-${questionId}`).style.display = '';
+        }
+        
+        // 質問の編集を保存
+        async function saveQuestionEdit(questionId) {
+            const textarea = document.getElementById(`question-edit-input-${questionId}`);
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                alert('質問内容を入力してください');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/questions/${questionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question_text: text })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '質問の更新に失敗しました');
+                }
+            } catch (error) {
+                console.error('質問更新エラー:', error);
+                alert('質問の更新に失敗しました');
+            }
+        }
+        
+        // 回答を編集モードに切り替え
+        function editAnswer(answerId) {
+            document.getElementById(`answer-text-${answerId}`).style.display = 'none';
+            document.getElementById(`answer-edit-${answerId}`).style.display = 'block';
+            document.getElementById(`edit-btn-a-${answerId}`).style.display = 'none';
+        }
+        
+        // 回答の編集をキャンセル
+        function cancelAnswerEdit(answerId) {
+            document.getElementById(`answer-text-${answerId}`).style.display = 'block';
+            document.getElementById(`answer-edit-${answerId}`).style.display = 'none';
+            document.getElementById(`edit-btn-a-${answerId}`).style.display = '';
+        }
+        
+        // 回答の編集を保存
+        async function saveAnswerEdit(answerId) {
+            const textarea = document.getElementById(`answer-edit-input-${answerId}`);
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                alert('回答内容を入力してください');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/answers/${answerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer_text: text })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '回答の更新に失敗しました');
+                }
+            } catch (error) {
+                console.error('回答更新エラー:', error);
+                alert('回答の更新に失敗しました');
+            }
+        }
+        
+        // 質問を削除
+        async function deleteQuestion(questionId) {
+            if (!confirm('この質問と関連する回答をすべて削除しますか？')) return;
+            
+            try {
+                const response = await fetch(`/api/questions/${questionId}`, { method: 'DELETE' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '質問の削除に失敗しました');
+                }
+            } catch (error) {
+                console.error('質問削除エラー:', error);
+                alert('質問の削除に失敗しました');
+            }
+        }
+        
+        // 回答を削除
+        async function deleteAnswer(answerId) {
+            if (!confirm('この回答を削除しますか？')) return;
+            
+            try {
+                const response = await fetch(`/api/answers/${answerId}`, { method: 'DELETE' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    qaLoaded = false;
+                    loadQuestions();
+                } else {
+                    alert(data.error || '回答の削除に失敗しました');
+                }
+            } catch (error) {
+                console.error('回答削除エラー:', error);
+                alert('回答の削除に失敗しました');
+            }
+        }
+        
+        // 日付フォーマット
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('ja-JP') + ' ' + d.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
         }
     </script>
     

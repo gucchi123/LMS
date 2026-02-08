@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title id="head-title">test_report_20260207.html</title>
+      <style type="text/css">body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  vertical-align: top;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+#environment ul {
+  margin: 0;
+  padding: 0 20px;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+.col-links__extra {
+  margin-right: 3px;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.logwrapper {
+  max-height: 230px;
+  overflow-y: scroll;
+  background-color: #e6e6e6;
+}
+.logwrapper.expanded {
+  max-height: none;
+}
+.logwrapper.expanded .logexpander:after {
+  content: "collapse [-]";
+}
+.logwrapper .logexpander {
+  z-index: 1;
+  position: sticky;
+  top: 10px;
+  width: max-content;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 5px 7px;
+  margin: 10px 0 10px calc(100% - 80px);
+  cursor: pointer;
+  background-color: #e6e6e6;
+}
+.logwrapper .logexpander:after {
+  content: "expand [+]";
+}
+.logwrapper .logexpander:hover {
+  color: #000;
+  border-color: #000;
+}
+.logwrapper .log {
+  min-height: 40px;
+  position: relative;
+  top: -50px;
+  height: calc(100% + 50px);
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  padding: 5px;
+  padding-right: 80px;
+  white-space: pre-wrap;
+}
+
+div.media {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin: 0 5px;
+  overflow: hidden;
+  width: 320px;
+}
+
+.media-container {
+  display: grid;
+  grid-template-columns: 25px auto 25px;
+  align-items: center;
+  flex: 1 1;
+  overflow: hidden;
+  height: 200px;
+}
+
+.media-container--fullscreen {
+  grid-template-columns: 0px auto 0px;
+}
+
+.media-container__nav--right,
+.media-container__nav--left {
+  text-align: center;
+  cursor: pointer;
+}
+
+.media-container__viewport {
+  cursor: pointer;
+  text-align: center;
+  height: inherit;
+}
+.media-container__viewport img,
+.media-container__viewport video {
+  object-fit: cover;
+  width: 100%;
+  max-height: 100%;
+}
+
+.media__name,
+.media__counter {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  flex: 0 0 25px;
+  align-items: center;
+}
+
+.collapsible td:not(.col-links) {
+  cursor: pointer;
+}
+.collapsible td:not(.col-links):hover::after {
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.col-result {
+  width: 130px;
+}
+.col-result:hover::after {
+  content: " (hide details)";
+}
+
+.col-result.collapsed:hover::after {
+  content: " (show details)";
+}
+
+#environment-header h2:hover::after {
+  content: " (hide details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#environment-header.collapsed h2:hover::after {
+  content: " (show details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+.sortable.desc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: -12.5px;
+  border: 10px solid #4caf50;
+  border-bottom: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.sortable.asc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: 12.5px;
+  border: 10px solid #4caf50;
+  border-top: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.hidden, .summary__reload__button.hidden {
+  display: none;
+}
+
+.summary__data {
+  flex: 0 0 550px;
+}
+.summary__reload {
+  flex: 1 1;
+  display: flex;
+  justify-content: center;
+}
+.summary__reload__button {
+  flex: 0 0 300px;
+  display: flex;
+  color: white;
+  font-weight: bold;
+  background-color: #4caf50;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.summary__reload__button:hover {
+  background-color: #46a049;
+}
+.summary__spacer {
+  flex: 0 0 550px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.filters,
+.collapse {
+  display: flex;
+  align-items: center;
+}
+.filters button,
+.collapse button {
+  color: #999;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.filters button:hover,
+.collapse button:hover {
+  color: #ccc;
+}
+
+.filter__label {
+  margin-right: 10px;
+}
+
+      </style>
+    
+  </head>
+  <body>
+    <h1 id="title">test_report_20260207.html</h1>
+    <p>Report generated on 07-Feb-2026 at 10:18:06 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+        v4.2.0</p>
+    <div id="environment-header">
+      <h2>Environment</h2>
+    </div>
+    <table id="environment"></table>
+    <!-- TEMPLATES -->
+      <template id="template_environment_row">
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </template>
+    <template id="template_results-table__body--empty">
+      <tbody class="results-table-row">
+        <tr id="not-found-message">
+          <td colspan="4">No results found. Check the filters.</td>
+        </tr>
+      </tbody>
+    </template>
+    <template id="template_results-table__tbody">
+      <tbody class="results-table-row">
+        <tr class="collapsible">
+        </tr>
+        <tr class="extras-row">
+          <td class="extra" colspan="4">
+            <div class="extraHTML"></div>
+            <div class="media">
+              <div class="media-container">
+                  <div class="media-container__nav--left">&lt;</div>
+                  <div class="media-container__viewport">
+                    <img src="" />
+                    <video controls>
+                      <source src="" type="video/mp4">
+                    </video>
+                  </div>
+                  <div class="media-container__nav--right">&gt;</div>
+                </div>
+                <div class="media__name"></div>
+                <div class="media__counter"></div>
+            </div>
+            <div class="logwrapper">
+              <div class="logexpander"></div>
+              <div class="log"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+    <!-- END TEMPLATES -->
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+        <div class="additional-summary prefix">
+        </div>
+        <p class="run-count">85 tests took 00:00:16.</p>
+        <p class="filter">(Un)check the boxes to filter the results.</p>
+        <div class="summary__reload">
+          <div class="summary__reload__button hidden" onclick="location.reload()">
+            <div>There are still tests running. <br />Reload this page to get the latest results!</div>
+          </div>
+        </div>
+        <div class="summary__spacer"></div>
+        <div class="controls">
+          <div class="filters">
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" disabled>
+            <span class="failed">0 Failed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" >
+            <span class="passed">85 Passed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" disabled>
+            <span class="skipped">0 Skipped,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" disabled>
+            <span class="xfailed">0 Expected failures,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xpassed" disabled>
+            <span class="xpassed">0 Unexpected passes,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="error" disabled>
+            <span class="error">0 Errors,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="rerun" disabled>
+            <span class="rerun">0 Reruns</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="retried" disabled>
+            <span class="retried">0 Retried,</span>
+          </div>
+          <div class="collapse">
+            <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+          </div>
+        </div>
+      </div>
+      <div class="additional-summary summary">
+      </div>
+      <div class="additional-summary postfix">
+      </div>
+    </div>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable" data-column-type="result">Result</th>
+          <th class="sortable" data-column-type="testId">Test</th>
+          <th class="sortable" data-column-type="duration">Duration</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+    </table>
+  <footer>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.12.10&#34;, &#34;Platform&#34;: &#34;Windows-11-10.0.22631-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;9.0.2&#34;, &#34;pluggy&#34;: &#34;1.6.0&#34;}, &#34;Plugins&#34;: {&#34;anyio&#34;: &#34;4.12.0&#34;, &#34;html&#34;: &#34;4.2.0&#34;, &#34;metadata&#34;: &#34;3.1.1&#34;}}, &#34;tests&#34;: {&#34;test_app.py::TestLogin::test_login_page_loads&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_login_page_loads&#34;, &#34;duration&#34;: &#34;00:00:01&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_login_page_loads&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:01&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;---------------------------- Captured stdout setup -----------------------------\n    \u696d\u7a2e\u8ffd\u52a0: \u5bbf\u6cca\n    \u696d\u7a2e\u8ffd\u52a0: \u5c0f\u58f2\n    \u696d\u7a2e\u8ffd\u52a0: \u98f2\u98df\n    \u696d\u7a2e\u8ffd\u52a0: \u4ecb\u8b77\n    \u696d\u7a2e\u8ffd\u52a0: \u533b\u7642\n    \u696d\u7a2e\u8ffd\u52a0: \u6559\u80b2\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30b0\u30e9\u30f3\u30c9\u30db\u30c6\u30eb\u6771\u4eac\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u6e6f\u5143\u65c5\u9928\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30b9\u30fc\u30d1\u30fc\u30de\u30fc\u30c8\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30d5\u30a1\u30c3\u30b7\u30e7\u30f3\u30b9\u30c8\u30a2\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u3055\u304f\u3089\u30ec\u30b9\u30c8\u30e9\u30f3\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30b9\u30de\u30a4\u30eb\u30b1\u30a2\u30bb\u30f3\u30bf\u30fc\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30bb\u30f3\u30c8\u30e9\u30eb\u30af\u30ea\u30cb\u30c3\u30af\n    \u30c6\u30ca\u30f3\u30c8\u8ffd\u52a0: \u30d6\u30e9\u30a4\u30c8\u30a2\u30ab\u30c7\u30df\u30fc\n    \u90e8\u7f72\u8ffd\u52a0: \u30b0\u30e9\u30f3\u30c9\u30db\u30c6\u30eb\u6771\u4eac &amp;gt; \u30d5\u30ed\u30f3\u30c8\u8ab2\n    \u90e8\u7f72\u8ffd\u52a0: \u30b0\u30e9\u30f3\u30c9\u30db\u30c6\u30eb\u6771\u4eac &amp;gt; \u55b6\u696d\u90e8\n    \u90e8\u7f72\u8ffd\u52a0: \u30b9\u30fc\u30d1\u30fc\u30de\u30fc\u30c8 &amp;gt; \u8ca9\u58f2\u90e8\n    \u90e8\u7f72\u8ffd\u52a0: \u30b9\u30fc\u30d1\u30fc\u30de\u30fc\u30c8 &amp;gt; \u30d0\u30a4\u30e4\u30fc\u90e8\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: admin\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: hotel_tanaka\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: ryokan_suzuki\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: retail_yamada\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: shop_sato\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: restaurant_ito\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: care_watanabe\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: medical_takahashi\n    \u30e6\u30fc\u30b6\u30fc\u8ffd\u52a0: edu_kobayashi\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u57fa\u790e\u7de8\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u5fdc\u7528\u7de8\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u5b9f\u8df5\u7de8\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u30d7\u30ed\u30f3\u30d7\u30c8\u5165\u9580\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u57fa\u672c\u64cd\u4f5c\u30ac\u30a4\u30c9\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u696d\u52d9\u6d3b\u7528\u8853\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u30c7\u30fc\u30bf\u5206\u6790\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u4e8b\u4f8b\u7d39\u4ecb\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u30ef\u30fc\u30af\u30b7\u30e7\u30c3\u30d7\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u5bbf\u6cca\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u4e88\u7d04\u7ba1\u7406\u306e\u52b9\u7387\u5316\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u591a\u8a00\u8a9e\u5bfe\u5fdc\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u5c0f\u58f2\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u5728\u5eab\u7ba1\u7406\u306e\u6700\u9069\u5316\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u98f2\u98df\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u30e1\u30cb\u30e5\u30fc\u958b\u767a\u652f\u63f4\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u4ecb\u8b77\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u30b1\u30a2\u30d7\u30e9\u30f3\u4f5c\u6210\u652f\u63f4\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u533b\u7642\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u533b\u7642\u6587\u66f8\u4f5c\u6210\u652f\u63f4\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u6559\u80b2\u696d\u5411\u3051AI\u6d3b\u7528\n    \u30ab\u30c6\u30b4\u30ea\u30fc\u8ffd\u52a0: \u6559\u6750\u4f5c\u6210\u652f\u63f4\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u5bbf\u6cca\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u5bbf\u6cca\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u5c0f\u58f2\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u5c0f\u58f2\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u98f2\u98df\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u98f2\u98df\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u4ecb\u8b77\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u4ecb\u8b77\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u533b\u7642\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u533b\u7642\n    \u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u8ffd\u52a0: \u6559\u80b2\u696d\u5411\u3051AI\u6d3b\u7528 \u2192 \u6559\u80b2\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5bbf\u6cca] \u4e88\u7d04\u30e1\u30fc\u30eb\u81ea\u52d5\u8fd4\u4fe1\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5bbf\u6cca] \u591a\u8a00\u8a9e\u5bfe\u5fdc\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5bbf\u6cca] \u53e3\u30b3\u30df\u8fd4\u4fe1\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5c0f\u58f2] \u5546\u54c1\u8aac\u660e\u6587\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5c0f\u58f2] \u5728\u5eab\u7ba1\u7406\u30ec\u30dd\u30fc\u30c8\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u5c0f\u58f2] \u304a\u5ba2\u69d8\u5bfe\u5fdcFAQ\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u98f2\u98df] \u30e1\u30cb\u30e5\u30fc\u958b\u767a\u30a2\u30a4\u30c7\u30a2\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u98f2\u98df] SNS\u6295\u7a3f\u6587\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u98f2\u98df] \u30a2\u30ec\u30eb\u30ae\u30fc\u5bfe\u5fdc\u6848\u5185\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u4ecb\u8b77] \u30b1\u30a2\u30d7\u30e9\u30f3\u4f5c\u6210\u652f\u63f4\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u4ecb\u8b77] \u5bb6\u65cf\u3078\u306e\u5831\u544a\u66f8\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u4ecb\u8b77] \u8a18\u9332\u6587\u66f8\u306e\u52b9\u7387\u5316\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u533b\u7642] \u60a3\u8005\u8aac\u660e\u8cc7\u6599\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u533b\u7642] \u533b\u7642\u6587\u66f8\u30b5\u30de\u30ea\u30fc\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u533b\u7642] \u554f\u8a3a\u7968\u306e\u5206\u6790\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u6559\u80b2] \u6559\u6750\u4f5c\u6210\u652f\u63f4\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u6559\u80b2] \u30c6\u30b9\u30c8\u554f\u984c\u4f5c\u6210\n    \u30e6\u30fc\u30b9\u30b1\u30fc\u30b9\u8ffd\u52a0: [\u6559\u80b2] \u4fdd\u8b77\u8005\u5411\u3051\u901a\u77e5\u4f5c\u6210\n\n----------------------------- Captured stdout call -----------------------------\n\u2713 \u30ed\u30b0\u30a4\u30f3\u30da\u30fc\u30b8\u304c\u6b63\u5e38\u306b\u8868\u793a\u3055\u308c\u307e\u3059\n&#34;}], &#34;test_app.py::TestLogin::test_admin_login_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_admin_login_success&#34;, &#34;duration&#34;: &#34;133 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_admin_login_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;133 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u7ba1\u7406\u8005\u30ed\u30b0\u30a4\u30f3\u6210\u529f\n&#34;}], &#34;test_app.py::TestLogin::test_hotel_user_login_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_hotel_user_login_success&#34;, &#34;duration&#34;: &#34;136 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_hotel_user_login_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;136 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5bbf\u6cca\u696d\u30e6\u30fc\u30b6\u30fc\u30ed\u30b0\u30a4\u30f3\u6210\u529f\n&#34;}], &#34;test_app.py::TestLogin::test_retail_user_login_success&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_retail_user_login_success&#34;, &#34;duration&#34;: &#34;126 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_retail_user_login_success&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;126 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5c0f\u58f2\u696d\u30e6\u30fc\u30b6\u30fc\u30ed\u30b0\u30a4\u30f3\u6210\u529f\n&#34;}], &#34;test_app.py::TestLogin::test_login_failure_wrong_password&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_login_failure_wrong_password&#34;, &#34;duration&#34;: &#34;120 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_login_failure_wrong_password&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;120 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u9593\u9055\u3063\u305f\u30d1\u30b9\u30ef\u30fc\u30c9\u3067\u6b63\u3057\u304f\u62d2\u5426\u3055\u308c\u307e\u3059\n&#34;}], &#34;test_app.py::TestLogin::test_login_failure_nonexistent_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_login_failure_nonexistent_user&#34;, &#34;duration&#34;: &#34;8 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_login_failure_nonexistent_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;8 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5b58\u5728\u3057\u306a\u3044\u30e6\u30fc\u30b6\u30fc\u3067\u6b63\u3057\u304f\u62d2\u5426\u3055\u308c\u307e\u3059\n&#34;}], &#34;test_app.py::TestLogin::test_logout&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestLogin::test_logout&#34;, &#34;duration&#34;: &#34;156 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestLogin::test_logout&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;156 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30ed\u30b0\u30a2\u30a6\u30c8\u6210\u529f\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_admin_sees_all_categories&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_admin_sees_all_categories&#34;, &#34;duration&#34;: &#34;137 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_admin_sees_all_categories&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;137 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u7ba1\u7406\u8005\u306f\u5168\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_hotel_user_sees_common_categories&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_hotel_user_sees_common_categories&#34;, &#34;duration&#34;: &#34;136 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_hotel_user_sees_common_categories&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;136 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5bbf\u6cca\u696d\u30e6\u30fc\u30b6\u30fc\u306f\u5171\u901a\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_hotel_user_sees_hotel_category&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_hotel_user_sees_hotel_category&#34;, &#34;duration&#34;: &#34;138 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_hotel_user_sees_hotel_category&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;138 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5bbf\u6cca\u696d\u30e6\u30fc\u30b6\u30fc\u306f\u5bbf\u6cca\u696d\u5c02\u7528\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_hotel_user_cannot_see_retail_category&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_hotel_user_cannot_see_retail_category&#34;, &#34;duration&#34;: &#34;129 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_hotel_user_cannot_see_retail_category&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;129 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5bbf\u6cca\u696d\u30e6\u30fc\u30b6\u30fc\u306f\u5c0f\u58f2\u696d\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_retail_user_sees_retail_category&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_retail_user_sees_retail_category&#34;, &#34;duration&#34;: &#34;123 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_retail_user_sees_retail_category&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;123 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5c0f\u58f2\u696d\u30e6\u30fc\u30b6\u30fc\u306f\u5c0f\u58f2\u696d\u5c02\u7528\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestIndustryAccess::test_retail_user_cannot_see_hotel_category&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAccess::test_retail_user_cannot_see_hotel_category&#34;, &#34;duration&#34;: &#34;139 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAccess::test_retail_user_cannot_see_hotel_category&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;139 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5c0f\u58f2\u696d\u30e6\u30fc\u30b6\u30fc\u306f\u5bbf\u6cca\u696d\u30ab\u30c6\u30b4\u30ea\u30fc\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestAdminAccess::test_admin_can_access_admin_page&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAdminAccess::test_admin_can_access_admin_page&#34;, &#34;duration&#34;: &#34;202 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAdminAccess::test_admin_can_access_admin_page&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;202 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u7ba1\u7406\u8005\u306f\u7ba1\u7406\u753b\u9762\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestAdminAccess::test_normal_user_cannot_access_admin&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAdminAccess::test_normal_user_cannot_access_admin&#34;, &#34;duration&#34;: &#34;171 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAdminAccess::test_normal_user_cannot_access_admin&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;171 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u7ba1\u7406\u753b\u9762\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestAdminAccess::test_unauthenticated_cannot_access_admin&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAdminAccess::test_unauthenticated_cannot_access_admin&#34;, &#34;duration&#34;: &#34;15 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAdminAccess::test_unauthenticated_cannot_access_admin&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;15 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672a\u8a8d\u8a3c\u30e6\u30fc\u30b6\u30fc\u306f\u7ba1\u7406\u753b\u9762\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestIndustryAPI::test_get_industries&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAPI::test_get_industries&#34;, &#34;duration&#34;: &#34;142 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAPI::test_get_industries&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;142 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u696d\u7a2e\u4e00\u89a7\u3092\u6b63\u5e38\u306b\u53d6\u5f97\uff086\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestIndustryAPI::test_create_industry&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAPI::test_create_industry&#34;, &#34;duration&#34;: &#34;132 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAPI::test_create_industry&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;132 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u65b0\u3057\u3044\u696d\u7a2e\u3092\u4f5c\u6210\u6210\u529f\n&#34;}], &#34;test_app.py::TestIndustryAPI::test_normal_user_cannot_create_industry&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestIndustryAPI::test_normal_user_cannot_create_industry&#34;, &#34;duration&#34;: &#34;121 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestIndustryAPI::test_normal_user_cannot_create_industry&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;121 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u696d\u7a2e\u4f5c\u6210\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestCategoryAPI::test_get_categories&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCategoryAPI::test_get_categories&#34;, &#34;duration&#34;: &#34;111 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCategoryAPI::test_get_categories&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;111 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30ab\u30c6\u30b4\u30ea\u30fc\u4e00\u89a7\u3092\u53d6\u5f97\uff0822\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestCategoryAPI::test_create_category&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCategoryAPI::test_create_category&#34;, &#34;duration&#34;: &#34;241 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCategoryAPI::test_create_category&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;241 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u65b0\u3057\u3044\u30ab\u30c6\u30b4\u30ea\u30fc\u3092\u4f5c\u6210\u6210\u529f\n&#34;}], &#34;test_app.py::TestCategoryAPI::test_update_category_access&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCategoryAPI::test_update_category_access&#34;, &#34;duration&#34;: &#34;198 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCategoryAPI::test_update_category_access&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;198 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30ab\u30c6\u30b4\u30ea\u30fc\u30a2\u30af\u30bb\u30b9\u5236\u5fa1\u3092\u66f4\u65b0\u6210\u529f\n&#34;}], &#34;test_app.py::TestUserAPI::test_create_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserAPI::test_create_user&#34;, &#34;duration&#34;: &#34;256 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserAPI::test_create_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;256 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u65b0\u3057\u3044\u30e6\u30fc\u30b6\u30fc\u3092\u4f5c\u6210\u6210\u529f\n&#34;}], &#34;test_app.py::TestUserAPI::test_create_user_duplicate_username&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserAPI::test_create_user_duplicate_username&#34;, &#34;duration&#34;: &#34;143 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserAPI::test_create_user_duplicate_username&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;143 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u91cd\u8907\u30e6\u30fc\u30b6\u30fc\u540d\u3067\u6b63\u3057\u304f\u30a8\u30e9\u30fc\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestUserAPI::test_get_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserAPI::test_get_user&#34;, &#34;duration&#34;: &#34;176 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserAPI::test_get_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;176 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30e6\u30fc\u30b6\u30fc\u8a73\u7d30\u3092\u53d6\u5f97\u6210\u529f\n&#34;}], &#34;test_app.py::TestUserAPI::test_normal_user_cannot_create_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserAPI::test_normal_user_cannot_create_user&#34;, &#34;duration&#34;: &#34;160 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserAPI::test_normal_user_cannot_create_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;160 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u30e6\u30fc\u30b6\u30fc\u4f5c\u6210\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestPageAccess::test_courses_page&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestPageAccess::test_courses_page&#34;, &#34;duration&#34;: &#34;188 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestPageAccess::test_courses_page&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;188 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30b3\u30fc\u30b9\u30ab\u30bf\u30ed\u30b0\u30da\u30fc\u30b8\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestPageAccess::test_dashboard_page&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestPageAccess::test_dashboard_page&#34;, &#34;duration&#34;: &#34;189 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestPageAccess::test_dashboard_page&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;189 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9\u30da\u30fc\u30b8\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestPageAccess::test_unauthenticated_redirect&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestPageAccess::test_unauthenticated_redirect&#34;, &#34;duration&#34;: &#34;18 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestPageAccess::test_unauthenticated_redirect&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;18 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672a\u8a8d\u8a3c\u30e6\u30fc\u30b6\u30fc\u306f\u6b63\u3057\u304f\u30ea\u30c0\u30a4\u30ec\u30af\u30c8\u3055\u308c\u307e\u3059\n&#34;}], &#34;test_app.py::TestTenantAPI::test_get_tenants&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTenantAPI::test_get_tenants&#34;, &#34;duration&#34;: &#34;197 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTenantAPI::test_get_tenants&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;197 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30c6\u30ca\u30f3\u30c8\u4e00\u89a7\u3092\u53d6\u5f97\uff088\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestTenantAPI::test_create_tenant&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTenantAPI::test_create_tenant&#34;, &#34;duration&#34;: &#34;203 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTenantAPI::test_create_tenant&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;203 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u65b0\u3057\u3044\u30c6\u30ca\u30f3\u30c8\u3092\u4f5c\u6210\u6210\u529f\n&#34;}], &#34;test_app.py::TestTenantAPI::test_company_admin_cannot_create_tenant&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTenantAPI::test_company_admin_cannot_create_tenant&#34;, &#34;duration&#34;: &#34;188 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTenantAPI::test_company_admin_cannot_create_tenant&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;188 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u30c6\u30ca\u30f3\u30c8\u4f5c\u6210\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestTenantAPI::test_normal_user_cannot_access_tenants&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTenantAPI::test_normal_user_cannot_access_tenants&#34;, &#34;duration&#34;: &#34;177 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTenantAPI::test_normal_user_cannot_access_tenants&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;177 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u30c6\u30ca\u30f3\u30c8API\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_get_departments&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_get_departments&#34;, &#34;duration&#34;: &#34;176 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_get_departments&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;176 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u90e8\u7f72\u4e00\u89a7\u3092\u53d6\u5f97\uff084\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_get_departments_by_tenant&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_get_departments_by_tenant&#34;, &#34;duration&#34;: &#34;164 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_get_departments_by_tenant&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;164 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30c6\u30ca\u30f3\u30c8\u6307\u5b9a\u3067\u90e8\u7f72\u4e00\u89a7\u3092\u53d6\u5f97\uff082\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_create_department&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_create_department&#34;, &#34;duration&#34;: &#34;155 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_create_department&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;155 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u65b0\u3057\u3044\u90e8\u7f72\u3092\u4f5c\u6210\u6210\u529f\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_update_department&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_update_department&#34;, &#34;duration&#34;: &#34;179 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_update_department&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;179 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u90e8\u7f72\u540d\u3092\u66f4\u65b0\u6210\u529f\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_delete_department_with_no_users&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_delete_department_with_no_users&#34;, &#34;duration&#34;: &#34;187 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_delete_department_with_no_users&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;187 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30e6\u30fc\u30b6\u30fc\u306e\u3044\u306a\u3044\u90e8\u7f72\u3092\u524a\u9664\u6210\u529f\n&#34;}], &#34;test_app.py::TestDepartmentAPI::test_company_admin_sees_own_departments&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentAPI::test_company_admin_sees_own_departments&#34;, &#34;duration&#34;: &#34;144 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentAPI::test_company_admin_sees_own_departments&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;144 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u81ea\u30c6\u30ca\u30f3\u30c8\u306e\u90e8\u7f72\u306e\u307f\u53d6\u5f97\uff084\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestDepartmentStats::test_get_department_stats&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDepartmentStats::test_get_department_stats&#34;, &#34;duration&#34;: &#34;173 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDepartmentStats::test_get_department_stats&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;173 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u90e8\u7f72\u5225\u7d71\u8a08\u3092\u53d6\u5f97\uff084\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestCSVImportExport::test_export_csv&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCSVImportExport::test_export_csv&#34;, &#34;duration&#34;: &#34;117 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCSVImportExport::test_export_csv&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;117 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30e6\u30fc\u30b6\u30fc\u4e00\u89a7\u3092CSV\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u6210\u529f\n&#34;}], &#34;test_app.py::TestCSVImportExport::test_import_csv&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCSVImportExport::test_import_csv&#34;, &#34;duration&#34;: &#34;403 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCSVImportExport::test_import_csv&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;403 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 CSV\u304b\u3089\u30e6\u30fc\u30b6\u30fc\u4e00\u62ec\u767b\u9332\u6210\u529f\uff081\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestCSVImportExport::test_import_csv_duplicate_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCSVImportExport::test_import_csv_duplicate_user&#34;, &#34;duration&#34;: &#34;165 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCSVImportExport::test_import_csv_duplicate_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;165 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u91cd\u8907\u30e6\u30fc\u30b6\u30fc\u3092\u6b63\u3057\u304f\u30b9\u30ad\u30c3\u30d7\n&#34;}], &#34;test_app.py::TestCSVImportExport::test_import_csv_no_file&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCSVImportExport::test_import_csv_no_file&#34;, &#34;duration&#34;: &#34;146 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCSVImportExport::test_import_csv_no_file&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;146 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 CSV\u30d5\u30a1\u30a4\u30eb\u306a\u3057\u3067\u6b63\u3057\u304f\u30a8\u30e9\u30fc\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestCSVImportExport::test_company_admin_export_csv&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestCSVImportExport::test_company_admin_export_csv&#34;, &#34;duration&#34;: &#34;143 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestCSVImportExport::test_company_admin_export_csv&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;143 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306e\u81ea\u30c6\u30ca\u30f3\u30c8CSV\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u6210\u529f\n&#34;}], &#34;test_app.py::TestUserStatsDetail::test_get_user_stats_detail&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserStatsDetail::test_get_user_stats_detail&#34;, &#34;duration&#34;: &#34;143 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserStatsDetail::test_get_user_stats_detail&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;143 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30e6\u30fc\u30b6\u30fc\u8a73\u7d30\u7d71\u8a08\u3092\u53d6\u5f97\u6210\u529f\n&#34;}], &#34;test_app.py::TestUserStatsDetail::test_get_nonexistent_user_stats&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserStatsDetail::test_get_nonexistent_user_stats&#34;, &#34;duration&#34;: &#34;161 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserStatsDetail::test_get_nonexistent_user_stats&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;161 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5b58\u5728\u3057\u306a\u3044\u30e6\u30fc\u30b6\u30fc\u306e\u7d71\u8a08\u3067\u6b63\u3057\u304f404\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestUserStatsDetail::test_company_admin_cannot_see_other_tenant_stats&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestUserStatsDetail::test_company_admin_cannot_see_other_tenant_stats&#34;, &#34;duration&#34;: &#34;160 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestUserStatsDetail::test_company_admin_cannot_see_other_tenant_stats&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;160 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u4ed6\u30c6\u30ca\u30f3\u30c8\u306e\u30e6\u30fc\u30b6\u30fc\u7d71\u8a08\u3092\u53c2\u7167\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestAnalyticsDashboard::test_analytics_page_loads&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAnalyticsDashboard::test_analytics_page_loads&#34;, &#34;duration&#34;: &#34;172 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAnalyticsDashboard::test_analytics_page_loads&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;172 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5206\u6790\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9\u30da\u30fc\u30b8\u304c\u6b63\u5e38\u306b\u8868\u793a\n&#34;}], &#34;test_app.py::TestAnalyticsDashboard::test_analytics_summary&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAnalyticsDashboard::test_analytics_summary&#34;, &#34;duration&#34;: &#34;159 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAnalyticsDashboard::test_analytics_summary&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;159 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5206\u6790\u30b5\u30de\u30ea\u30fcAPI\u3092\u53d6\u5f97\u6210\u529f\n&#34;}], &#34;test_app.py::TestAnalyticsDashboard::test_analytics_unauthenticated&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAnalyticsDashboard::test_analytics_unauthenticated&#34;, &#34;duration&#34;: &#34;13 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAnalyticsDashboard::test_analytics_unauthenticated&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;13 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672a\u8a8d\u8a3c\u30e6\u30fc\u30b6\u30fc\u306f\u5206\u6790\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestAnalyticsDashboard::test_normal_user_cannot_access_analytics&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestAnalyticsDashboard::test_normal_user_cannot_access_analytics&#34;, &#34;duration&#34;: &#34;179 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestAnalyticsDashboard::test_normal_user_cannot_access_analytics&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;179 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u5206\u6790\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestRoleBasedAccess::test_super_admin_login_has_role&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestRoleBasedAccess::test_super_admin_login_has_role&#34;, &#34;duration&#34;: &#34;147 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestRoleBasedAccess::test_super_admin_login_has_role&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;147 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 super_admin\u306e\u30ed\u30fc\u30eb\u60c5\u5831\u304c\u30ed\u30b0\u30a4\u30f3\u6642\u306b\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestRoleBasedAccess::test_company_admin_login_has_role&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestRoleBasedAccess::test_company_admin_login_has_role&#34;, &#34;duration&#34;: &#34;114 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestRoleBasedAccess::test_company_admin_login_has_role&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;114 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306e\u30ed\u30b0\u30a4\u30f3\u6210\u529f\n&#34;}], &#34;test_app.py::TestRoleBasedAccess::test_company_admin_can_access_admin_page&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestRoleBasedAccess::test_company_admin_can_access_admin_page&#34;, &#34;duration&#34;: &#34;163 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestRoleBasedAccess::test_company_admin_can_access_admin_page&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;163 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u7ba1\u7406\u753b\u9762\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestRoleBasedAccess::test_normal_user_cannot_access_admin&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestRoleBasedAccess::test_normal_user_cannot_access_admin&#34;, &#34;duration&#34;: &#34;118 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestRoleBasedAccess::test_normal_user_cannot_access_admin&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;118 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u7ba1\u7406\u753b\u9762\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestGA4Integration::test_ga4_tracking_included_in_pages&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestGA4Integration::test_ga4_tracking_included_in_pages&#34;, &#34;duration&#34;: &#34;123 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestGA4Integration::test_ga4_tracking_included_in_pages&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;123 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 GA4\u30c8\u30e9\u30c3\u30ad\u30f3\u30b0\u306e\u6761\u4ef6\u4ed8\u304d\u30a4\u30f3\u30af\u30eb\u30fc\u30c9\u304c\u52d5\u4f5c\n&#34;}], &#34;test_app.py::TestGA4Integration::test_ga4_tracking_template_exists&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestGA4Integration::test_ga4_tracking_template_exists&#34;, &#34;duration&#34;: &#34;138 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestGA4Integration::test_ga4_tracking_template_exists&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;138 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 GA4\u30c8\u30e9\u30c3\u30ad\u30f3\u30b0\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8\u304c\u5168\u30da\u30fc\u30b8\u3067\u6b63\u5e38\u306b\u30ed\u30fc\u30c9\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_migrate_db_import&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_migrate_db_import&#34;, &#34;duration&#34;: &#34;1 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_migrate_db_import&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;1 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 migrate_db.py\u304c\u6b63\u5e38\u306b\u30a4\u30f3\u30dd\u30fc\u30c8\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_migrations_are_ordered&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_migrations_are_ordered&#34;, &#34;duration&#34;: &#34;1 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_migrations_are_ordered&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;1 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30de\u30a4\u30b0\u30ec\u30fc\u30b7\u30e7\u30f3\u304c\u6b63\u3057\u3044\u9806\u5e8f\u3067\u5b9a\u7fa9\uff0811\u4ef6\uff09\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_schema_migrations_table_exists&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_schema_migrations_table_exists&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_schema_migrations_table_exists&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 schema_migrations\u30c6\u30fc\u30d6\u30eb\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_all_tables_exist&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_all_tables_exist&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_all_tables_exist&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u5fc5\u8981\u306a\u5168\u30c6\u30fc\u30d6\u30eb\uff0812\u500b\uff09\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_users_table_has_new_columns&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_users_table_has_new_columns&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_users_table_has_new_columns&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 users\u30c6\u30fc\u30d6\u30eb\u306btenant_id, department_id, role\u30ab\u30e9\u30e0\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestDatabaseMigration::test_backup_creation&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestDatabaseMigration::test_backup_creation&#34;, &#34;duration&#34;: &#34;7 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestDatabaseMigration::test_backup_creation&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;7 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n  \u30d0\u30c3\u30af\u30a2\u30c3\u30d7\u3092\u4f5c\u6210\u3057\u307e\u3057\u305f: db_backups\\lms_backup_20260207_101803.db\n\u2713 \u30d0\u30c3\u30af\u30a2\u30c3\u30d7\u304c\u6b63\u3057\u304f\u4f5c\u6210\u3055\u308c\u308b\n&#34;}], &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_super_admin&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_super_admin&#34;, &#34;duration&#34;: &#34;163 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_super_admin&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;163 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 super_admin\u306f\u52d5\u753b\u8996\u8074\u5206\u6790\u30da\u30fc\u30b8\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_company_admin&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_company_admin&#34;, &#34;duration&#34;: &#34;143 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_page_loads_for_company_admin&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;143 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u52d5\u753b\u8996\u8074\u5206\u6790\u30da\u30fc\u30b8\u306b\u30a2\u30af\u30bb\u30b9\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_normal_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_normal_user&#34;, &#34;duration&#34;: &#34;152 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_normal_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;152 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u52d5\u753b\u8996\u8074\u5206\u6790\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_unauthenticated&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_unauthenticated&#34;, &#34;duration&#34;: &#34;12 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsDashboard::test_video_analytics_denied_for_unauthenticated&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;12 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672a\u8a8d\u8a3c\u30e6\u30fc\u30b6\u30fc\u306f\u52d5\u753b\u8996\u8074\u5206\u6790\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u30ea\u30c0\u30a4\u30ec\u30af\u30c8\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_returns_correct_structure&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_returns_correct_structure&#34;, &#34;duration&#34;: &#34;158 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsAPI::test_summary_api_returns_correct_structure&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;158 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u8996\u8074\u5206\u6790API\u304c\u6b63\u3057\u3044\u69cb\u9020\u306e\u30c7\u30fc\u30bf\u3092\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_with_period_filter&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_with_period_filter&#34;, &#34;duration&#34;: &#34;167 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsAPI::test_summary_api_with_period_filter&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;167 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u671f\u9593\u30d5\u30a3\u30eb\u30bf\u30fc\uff087/30/90/365\u65e5\uff09\u3067\u6b63\u5e38\u306b\u30c7\u30fc\u30bf\u8fd4\u5374\n&#34;}], &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_normal_user&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_normal_user&#34;, &#34;duration&#34;: &#34;176 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_normal_user&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;176 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u4e00\u822c\u30e6\u30fc\u30b6\u30fc\u306f\u8996\u8074\u5206\u6790API\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u6b63\u5e38\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_unauthenticated&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_unauthenticated&#34;, &#34;duration&#34;: &#34;11 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsAPI::test_summary_api_denied_for_unauthenticated&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;11 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672a\u8a8d\u8a3c\u30e6\u30fc\u30b6\u30fc\u306f\u8996\u8074\u5206\u6790API\u306b\u30a2\u30af\u30bb\u30b9\u4e0d\u53ef\uff08\u30ea\u30c0\u30a4\u30ec\u30af\u30c8\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_tenant_data&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_tenant_data&#34;, &#34;duration&#34;: &#34;191 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_tenant_data&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;191 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 super_admin\u306f\u5168\u30c6\u30ca\u30f3\u30c8\u306e\u8996\u8074\u30c7\u30fc\u30bf\u3092\u95b2\u89a7\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_departments&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_departments&#34;, &#34;duration&#34;: &#34;151 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_sees_all_departments&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;151 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 super_admin\u306f\u5168\u30c6\u30ca\u30f3\u30c8\u306e\u90e8\u7f72\u7d71\u8a08\u3092\u95b2\u89a7\u53ef\u80fd\uff082\u30c6\u30ca\u30f3\u30c8\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_users&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_users&#34;, &#34;duration&#34;: &#34;134 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_users&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;134 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u81ea\u30c6\u30ca\u30f3\u30c8\u306e\u30e6\u30fc\u30b6\u30fc\u306e\u307f\u95b2\u89a7\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_departments&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_departments&#34;, &#34;duration&#34;: &#34;152 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_sees_only_own_tenant_departments&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;152 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306f\u81ea\u30c6\u30ca\u30f3\u30c8\u306e\u90e8\u7f72\u7d71\u8a08\u306e\u307f\u95b2\u89a7\u53ef\u80fd\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_video_stats_include_all_viewers&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_video_stats_include_all_viewers&#34;, &#34;duration&#34;: &#34;177 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_super_admin_video_stats_include_all_viewers&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;177 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 super_admin\u306e\u52d5\u753bA\u306e\u8996\u8074\u8005\u6570: 3\u4eba\uff08\u5168\u30c6\u30ca\u30f3\u30c8\u542b\u3080\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_video_stats_filtered&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_video_stats_filtered&#34;, &#34;duration&#34;: &#34;158 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_company_admin_video_stats_filtered&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;158 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 company_admin\u306e\u52d5\u753bA\u306e\u8996\u8074\u8005\u6570: 1\u4eba\uff08\u81ea\u30c6\u30ca\u30f3\u30c8\u306e\u307f\uff09\n&#34;}], &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_summary_totals_consistent&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsTenantIsolation::test_summary_totals_consistent&#34;, &#34;duration&#34;: &#34;179 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsTenantIsolation::test_summary_totals_consistent&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;179 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30b5\u30de\u30ea\u30fc\u306e\u6570\u5024\u304c\u59a5\u5f53\u306a\u7bc4\u56f2\u5185\n&#34;}], &#34;test_app.py::TestVideoAnalyticsNavigation::test_admin_page_has_video_analytics_link&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsNavigation::test_admin_page_has_video_analytics_link&#34;, &#34;duration&#34;: &#34;281 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsNavigation::test_admin_page_has_video_analytics_link&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;281 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u7ba1\u7406\u753b\u9762\u306b\u52d5\u753b\u8996\u8074\u5206\u6790\u30ea\u30f3\u30af\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestVideoAnalyticsNavigation::test_access_analytics_page_has_video_analytics_link&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsNavigation::test_access_analytics_page_has_video_analytics_link&#34;, &#34;duration&#34;: &#34;124 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsNavigation::test_access_analytics_page_has_video_analytics_link&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;124 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30a2\u30af\u30bb\u30b9\u5206\u6790\u30da\u30fc\u30b8\u306b\u52d5\u753b\u8996\u8074\u5206\u6790\u30ea\u30f3\u30af\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestVideoAnalyticsNavigation::test_video_analytics_page_has_admin_link&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestVideoAnalyticsNavigation::test_video_analytics_page_has_admin_link&#34;, &#34;duration&#34;: &#34;118 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestVideoAnalyticsNavigation::test_video_analytics_page_has_admin_link&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;118 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u52d5\u753b\u8996\u8074\u5206\u6790\u30da\u30fc\u30b8\u306b\u7ba1\u7406\u753b\u9762\u30fb\u30a2\u30af\u30bb\u30b9\u5206\u6790\u30ea\u30f3\u30af\u304c\u5b58\u5728\n&#34;}], &#34;test_app.py::TestTestDBIsolation::test_test_db_exists&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTestDBIsolation::test_test_db_exists&#34;, &#34;duration&#34;: &#34;1 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTestDBIsolation::test_test_db_exists&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;1 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30c6\u30b9\u30c8\u7528DB\u5b58\u5728: test_lms.db\n&#34;}], &#34;test_app.py::TestTestDBIsolation::test_production_db_not_modified&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTestDBIsolation::test_production_db_not_modified&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTestDBIsolation::test_production_db_not_modified&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u672c\u756aDB\u306b\u30c6\u30b9\u30c8\u30c7\u30fc\u30bf\u304c\u6df7\u5165\u3057\u3066\u3044\u306a\u3044\u3053\u3068\u3092\u78ba\u8a8d\n&#34;}], &#34;test_app.py::TestTestDBIsolation::test_app_config_uses_test_db&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;test_app.py::TestTestDBIsolation::test_app_config_uses_test_db&#34;, &#34;duration&#34;: &#34;138 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;test_app.py::TestTestDBIsolation::test_app_config_uses_test_db&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;138 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2713 \u30c6\u30b9\u30c8\u4e2d\u306e\u30a2\u30d7\u30ea\u306f\u30c6\u30b9\u30c8\u7528DB\u3092\u53c2\u7167\n--------------------------- Captured stdout teardown ---------------------------\n\n\u30c6\u30b9\u30c8\u7528DB\u524a\u9664: C:\\Users\\makoto.mizuguchi\\OneDrive - Rakuten Group, Inc\\CursorFiles\\50Development\\LMS\\test_lms.db\n&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;test_report_20260207.html&#34;}"></div>
+    <script>
+      (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')
+
+class DataManager {
+    setManager(data) {
+        const collapsedCategories = [...getCollapsedCategory(data.renderCollapsed)]
+        const collapsedIds = []
+        const tests = Object.values(data.tests).flat().map((test, index) => {
+            const collapsed = collapsedCategories.includes(test.result.toLowerCase())
+            const id = `test_${index}`
+            if (collapsed) {
+                collapsedIds.push(id)
+            }
+            return {
+                ...test,
+                id,
+                collapsed,
+            }
+        })
+        const dataBlob = { ...data, tests }
+        this.data = { ...dataBlob }
+        this.renderData = { ...dataBlob }
+        setCollapsedIds(collapsedIds)
+    }
+
+    get allData() {
+        return { ...this.data }
+    }
+
+    resetRender() {
+        this.renderData = { ...this.data }
+    }
+
+    setRender(data) {
+        this.renderData.tests = [...data]
+    }
+
+    toggleCollapsedItem(id) {
+        this.renderData.tests = this.renderData.tests.map((test) =>
+            test.id === id ? { ...test, collapsed: !test.collapsed } : test,
+        )
+    }
+
+    set allCollapsed(collapsed) {
+        this.renderData = { ...this.renderData, tests: [...this.renderData.tests.map((test) => (
+            { ...test, collapsed }
+        ))] }
+    }
+
+    get testSubset() {
+        return [...this.renderData.tests]
+    }
+
+    get environment() {
+        return this.renderData.environment
+    }
+
+    get initialSort() {
+        return this.data.initialSort
+    }
+}
+
+module.exports = {
+    manager: new DataManager(),
+}
+
+},{"./storage.js":8}],2:[function(require,module,exports){
+const mediaViewer = require('./mediaviewer.js')
+const templateEnvRow = document.getElementById('template_environment_row')
+const templateResult = document.getElementById('template_results-table__tbody')
+
+function htmlToElements(html) {
+    const temp = document.createElement('template')
+    temp.innerHTML = html
+    return temp.content.childNodes
+}
+
+const find = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return elem.querySelector(selector)
+}
+
+const findAll = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return [...elem.querySelectorAll(selector)]
+}
+
+const dom = {
+    getStaticRow: (key, value) => {
+        const envRow = templateEnvRow.content.cloneNode(true)
+        const isObj = typeof value === 'object' && value !== null
+        const values = isObj ? Object.keys(value).map((k) => `${k}: ${value[k]}`) : null
+
+        const valuesElement = htmlToElements(
+            values ? `<ul>${values.map((val) => `<li>${val}</li>`).join('')}<ul>` : `<div>${value}</div>`)[0]
+        const td = findAll('td', envRow)
+        td[0].textContent = key
+        td[1].appendChild(valuesElement)
+
+        return envRow
+    },
+    getResultTBody: ({ testId, id, log, extras, resultsTableRow, tableHtml, result, collapsed }) => {
+        const resultBody = templateResult.content.cloneNode(true)
+        resultBody.querySelector('tbody').classList.add(result.toLowerCase())
+        resultBody.querySelector('tbody').id = testId
+        resultBody.querySelector('.collapsible').dataset.id = id
+
+        resultsTableRow.forEach((html) => {
+            const t = document.createElement('template')
+            t.innerHTML = html
+            resultBody.querySelector('.collapsible').appendChild(t.content)
+        })
+
+        if (log) {
+            // Wrap lines starting with "E" with span.error to color those lines red
+            const wrappedLog = log.replace(/^E.*$/gm, (match) => `<span class="error">${match}</span>`)
+            resultBody.querySelector('.log').innerHTML = wrappedLog
+        } else {
+            resultBody.querySelector('.log').remove()
+        }
+
+        if (collapsed) {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.add('collapsed')
+            resultBody.querySelector('.extras-row').classList.add('hidden')
+        } else {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.remove('collapsed')
+        }
+
+        const media = []
+        extras?.forEach(({ name, format_type, content }) => {
+            if (['image', 'video'].includes(format_type)) {
+                media.push({ path: content, name, format_type })
+            }
+
+            if (format_type === 'html') {
+                resultBody.querySelector('.extraHTML').insertAdjacentHTML('beforeend', `<div>${content}</div>`)
+            }
+        })
+        mediaViewer.setup(resultBody, media)
+
+        // Add custom html from the pytest_html_results_table_html hook
+        tableHtml?.forEach((item) => {
+            resultBody.querySelector('td[class="extra"]').insertAdjacentHTML('beforeend', item)
+        })
+
+        return resultBody
+    },
+}
+
+module.exports = {
+    dom,
+    htmlToElements,
+    find,
+    findAll,
+}
+
+},{"./mediaviewer.js":6}],3:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const storageModule = require('./storage.js')
+
+const getFilteredSubSet = (filter) =>
+    manager.allData.tests.filter(({ result }) => filter.includes(result.toLowerCase()))
+
+const doInitFilter = () => {
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+}
+
+const doFilter = (type, show) => {
+    if (show) {
+        storageModule.showCategory(type)
+    } else {
+        storageModule.hideCategory(type)
+    }
+
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+
+    const sortColumn = storageModule.getSort()
+    doSort(sortColumn, true)
+}
+
+module.exports = {
+    doFilter,
+    doInitFilter,
+}
+
+},{"./datamanager.js":1,"./sort.js":7,"./storage.js":8}],4:[function(require,module,exports){
+const { redraw, bindEvents, renderStatic } = require('./main.js')
+const { doInitFilter } = require('./filter.js')
+const { doInitSort } = require('./sort.js')
+const { manager } = require('./datamanager.js')
+const data = JSON.parse(document.getElementById('data-container').dataset.jsonblob)
+
+function init() {
+    manager.setManager(data)
+    doInitFilter()
+    doInitSort()
+    renderStatic()
+    redraw()
+    bindEvents()
+}
+
+init()
+
+},{"./datamanager.js":1,"./filter.js":3,"./main.js":5,"./sort.js":7}],5:[function(require,module,exports){
+const { dom, find, findAll } = require('./dom.js')
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const { doFilter } = require('./filter.js')
+const {
+    getVisible,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    getSortDirection,
+    possibleFilters,
+} = require('./storage.js')
+
+const removeChildren = (node) => {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild)
+    }
+}
+
+const renderStatic = () => {
+    const renderEnvironmentTable = () => {
+        const environment = manager.environment
+        const rows = Object.keys(environment).map((key) => dom.getStaticRow(key, environment[key]))
+        const table = document.getElementById('environment')
+        removeChildren(table)
+        rows.forEach((row) => table.appendChild(row))
+    }
+    renderEnvironmentTable()
+}
+
+const addItemToggleListener = (elem) => {
+    elem.addEventListener('click', ({ target }) => {
+        const id = target.parentElement.dataset.id
+        manager.toggleCollapsedItem(id)
+
+        const collapsedIds = getCollapsedIds()
+        if (collapsedIds.includes(id)) {
+            const updated = collapsedIds.filter((item) => item !== id)
+            setCollapsedIds(updated)
+        } else {
+            collapsedIds.push(id)
+            setCollapsedIds(collapsedIds)
+        }
+        redraw()
+    })
+}
+
+const renderContent = (tests) => {
+    const sortAttr = getSort(manager.initialSort)
+    const sortAsc = JSON.parse(getSortDirection())
+    const rows = tests.map(dom.getResultTBody)
+    const table = document.getElementById('results-table')
+    const tableHeader = document.getElementById('results-table-head')
+
+    const newTable = document.createElement('table')
+    newTable.id = 'results-table'
+
+    // remove all sorting classes and set the relevant
+    findAll('.sortable', tableHeader).forEach((elem) => elem.classList.remove('asc', 'desc'))
+    tableHeader.querySelector(`.sortable[data-column-type="${sortAttr}"]`)?.classList.add(sortAsc ? 'desc' : 'asc')
+    newTable.appendChild(tableHeader)
+
+    if (!rows.length) {
+        const emptyTable = document.getElementById('template_results-table__body--empty').content.cloneNode(true)
+        newTable.appendChild(emptyTable)
+    } else {
+        rows.forEach((row) => {
+            if (!!row) {
+                findAll('.collapsible td:not(.col-links', row).forEach(addItemToggleListener)
+                find('.logexpander', row).addEventListener('click',
+                    (evt) => evt.target.parentNode.classList.toggle('expanded'),
+                )
+                newTable.appendChild(row)
+            }
+        })
+    }
+
+    table.replaceWith(newTable)
+}
+
+const renderDerived = () => {
+    const currentFilter = getVisible()
+    possibleFilters.forEach((result) => {
+        const input = document.querySelector(`input[data-test-result="${result}"]`)
+        input.checked = currentFilter.includes(result)
+    })
+}
+
+const bindEvents = () => {
+    const filterColumn = (evt) => {
+        const { target: element } = evt
+        const { testResult } = element.dataset
+
+        doFilter(testResult, element.checked)
+        const collapsedIds = getCollapsedIds()
+        const updated = manager.renderData.tests.map((test) => {
+            return {
+                ...test,
+                collapsed: collapsedIds.includes(test.id),
+            }
+        })
+        manager.setRender(updated)
+        redraw()
+    }
+
+    const header = document.getElementById('environment-header')
+    header.addEventListener('click', () => {
+        const table = document.getElementById('environment')
+        table.classList.toggle('hidden')
+        header.classList.toggle('collapsed')
+    })
+
+    findAll('input[name="filter_checkbox"]').forEach((elem) => {
+        elem.addEventListener('click', filterColumn)
+    })
+
+    findAll('.sortable').forEach((elem) => {
+        elem.addEventListener('click', (evt) => {
+            const { target: element } = evt
+            const { columnType } = element.dataset
+            doSort(columnType)
+            redraw()
+        })
+    })
+
+    document.getElementById('show_all_details').addEventListener('click', () => {
+        manager.allCollapsed = false
+        setCollapsedIds([])
+        redraw()
+    })
+    document.getElementById('hide_all_details').addEventListener('click', () => {
+        manager.allCollapsed = true
+        const allIds = manager.renderData.tests.map((test) => test.id)
+        setCollapsedIds(allIds)
+        redraw()
+    })
+}
+
+const redraw = () => {
+    const { testSubset } = manager
+
+    renderContent(testSubset)
+    renderDerived()
+}
+
+module.exports = {
+    redraw,
+    bindEvents,
+    renderStatic,
+}
+
+},{"./datamanager.js":1,"./dom.js":2,"./filter.js":3,"./sort.js":7,"./storage.js":8}],6:[function(require,module,exports){
+class MediaViewer {
+    constructor(assets) {
+        this.assets = assets
+        this.index = 0
+    }
+
+    nextActive() {
+        this.index = this.index === this.assets.length - 1 ? 0 : this.index + 1
+        return [this.activeFile, this.index]
+    }
+
+    prevActive() {
+        this.index = this.index === 0 ? this.assets.length - 1 : this.index -1
+        return [this.activeFile, this.index]
+    }
+
+    get currentIndex() {
+        return this.index
+    }
+
+    get activeFile() {
+        return this.assets[this.index]
+    }
+}
+
+
+const setup = (resultBody, assets) => {
+    if (!assets.length) {
+        resultBody.querySelector('.media').classList.add('hidden')
+        return
+    }
+
+    const mediaViewer = new MediaViewer(assets)
+    const container = resultBody.querySelector('.media-container')
+    const leftArrow = resultBody.querySelector('.media-container__nav--left')
+    const rightArrow = resultBody.querySelector('.media-container__nav--right')
+    const mediaName = resultBody.querySelector('.media__name')
+    const counter = resultBody.querySelector('.media__counter')
+    const imageEl = resultBody.querySelector('img')
+    const sourceEl = resultBody.querySelector('source')
+    const videoEl = resultBody.querySelector('video')
+
+    const setImg = (media, index) => {
+        if (media?.format_type === 'image') {
+            imageEl.src = media.path
+
+            imageEl.classList.remove('hidden')
+            videoEl.classList.add('hidden')
+        } else if (media?.format_type === 'video') {
+            sourceEl.src = media.path
+
+            videoEl.classList.remove('hidden')
+            imageEl.classList.add('hidden')
+        }
+
+        mediaName.innerText = media?.name
+        counter.innerText = `${index + 1} / ${assets.length}`
+    }
+    setImg(mediaViewer.activeFile, mediaViewer.currentIndex)
+
+    const moveLeft = () => {
+        const [media, index] = mediaViewer.prevActive()
+        setImg(media, index)
+    }
+    const doRight = () => {
+        const [media, index] = mediaViewer.nextActive()
+        setImg(media, index)
+    }
+    const openImg = () => {
+        window.open(mediaViewer.activeFile.path, '_blank')
+    }
+    if (assets.length === 1) {
+        container.classList.add('media-container--fullscreen')
+    } else {
+        leftArrow.addEventListener('click', moveLeft)
+        rightArrow.addEventListener('click', doRight)
+    }
+    imageEl.addEventListener('click', openImg)
+}
+
+module.exports = {
+    setup,
+}
+
+},{}],7:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const storageModule = require('./storage.js')
+
+const genericSort = (list, key, ascending, customOrder) => {
+    let sorted
+    if (customOrder) {
+        sorted = list.sort((a, b) => {
+            const aValue = a.result.toLowerCase()
+            const bValue = b.result.toLowerCase()
+
+            const aIndex = customOrder.findIndex((item) => item.toLowerCase() === aValue)
+            const bIndex = customOrder.findIndex((item) => item.toLowerCase() === bValue)
+
+            // Compare the indices to determine the sort order
+            return aIndex - bIndex
+        })
+    } else {
+        sorted = list.sort((a, b) => a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1)
+    }
+
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const durationSort = (list, ascending) => {
+    const parseDuration = (duration) => {
+        if (duration.includes(':')) {
+            // If it's in the format "HH:mm:ss"
+            const [hours, minutes, seconds] = duration.split(':').map(Number)
+            return (hours * 3600 + minutes * 60 + seconds) * 1000
+        } else {
+            // If it's in the format "nnn ms"
+            return parseInt(duration)
+        }
+    }
+    const sorted = list.sort((a, b) => parseDuration(a['duration']) - parseDuration(b['duration']))
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const doInitSort = () => {
+    const type = storageModule.getSort(manager.initialSort)
+    const ascending = storageModule.getSortDirection()
+    const list = manager.testSubset
+    const initialOrder = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed', 'Skipped', 'Passed']
+
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    if (type?.toLowerCase() === 'original') {
+        manager.setRender(list)
+    } else {
+        let sortedList
+        switch (type) {
+        case 'duration':
+            sortedList = durationSort(list, ascending)
+            break
+        case 'result':
+            sortedList = genericSort(list, type, ascending, initialOrder)
+            break
+        default:
+            sortedList = genericSort(list, type, ascending)
+            break
+        }
+        manager.setRender(sortedList)
+    }
+}
+
+const doSort = (type, skipDirection) => {
+    const newSortType = storageModule.getSort(manager.initialSort) !== type
+    const currentAsc = storageModule.getSortDirection()
+    let ascending
+    if (skipDirection) {
+        ascending = currentAsc
+    } else {
+        ascending = newSortType ? false : !currentAsc
+    }
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    const list = manager.testSubset
+    const sortedList = type === 'duration' ? durationSort(list, ascending) : genericSort(list, type, ascending)
+    manager.setRender(sortedList)
+}
+
+module.exports = {
+    doInitSort,
+    doSort,
+}
+
+},{"./datamanager.js":1,"./storage.js":8}],8:[function(require,module,exports){
+const possibleFilters = [
+    'passed',
+    'skipped',
+    'failed',
+    'error',
+    'xfailed',
+    'xpassed',
+    'rerun',
+]
+
+const getVisible = () => {
+    const url = new URL(window.location.href)
+    const settings = new URLSearchParams(url.search).get('visible')
+    const lower = (item) => {
+        const lowerItem = item.toLowerCase()
+        if (possibleFilters.includes(lowerItem)) {
+            return lowerItem
+        }
+        return null
+    }
+    return settings === null ?
+        possibleFilters :
+        [...new Set(settings?.split(',').map(lower).filter((item) => item))]
+}
+
+const hideCategory = (categoryToHide) => {
+    const url = new URL(window.location.href)
+    const visibleParams = new URLSearchParams(url.search).get('visible')
+    const currentVisible = visibleParams ? visibleParams.split(',') : [...possibleFilters]
+    const settings = [...new Set(currentVisible)].filter((f) => f !== categoryToHide).join(',')
+
+    url.searchParams.set('visible', settings)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const showCategory = (categoryToShow) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const url = new URL(window.location.href)
+    const currentVisible = new URLSearchParams(url.search).get('visible')?.split(',').filter(Boolean) ||
+        [...possibleFilters]
+    const settings = [...new Set([categoryToShow, ...currentVisible])]
+    const noFilter = possibleFilters.length === settings.length || !settings.length
+
+    noFilter ? url.searchParams.delete('visible') : url.searchParams.set('visible', settings.join(','))
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getSort = (initialSort) => {
+    const url = new URL(window.location.href)
+    let sort = new URLSearchParams(url.search).get('sort')
+    if (!sort) {
+        sort = initialSort || 'result'
+    }
+    return sort
+}
+
+const setSort = (type) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', type)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getCollapsedCategory = (renderCollapsed) => {
+    let categories
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const collapsedItems = new URLSearchParams(url.search).get('collapsed')
+        switch (true) {
+        case !renderCollapsed && collapsedItems === null:
+            categories = ['passed']
+            break
+        case collapsedItems?.length === 0 || /^["']{2}$/.test(collapsedItems):
+            categories = []
+            break
+        case /^all$/.test(collapsedItems) || collapsedItems === null && /^all$/.test(renderCollapsed):
+            categories = [...possibleFilters]
+            break
+        default:
+            categories = collapsedItems?.split(',').map((item) => item.toLowerCase()) || renderCollapsed
+            break
+        }
+    } else {
+        categories = []
+    }
+    return categories
+}
+
+const getSortDirection = () => JSON.parse(sessionStorage.getItem('sortAsc')) || false
+const setSortDirection = (ascending) => sessionStorage.setItem('sortAsc', ascending)
+
+const getCollapsedIds = () => JSON.parse(sessionStorage.getItem('collapsedIds')) || []
+const setCollapsedIds = (list) => sessionStorage.setItem('collapsedIds', JSON.stringify(list))
+
+module.exports = {
+    getVisible,
+    hideCategory,
+    showCategory,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    setSort,
+    getSortDirection,
+    setSortDirection,
+    getCollapsedCategory,
+    possibleFilters,
+}
+
+},{}]},{},[4]);
+    </script>
+  </footer>
+  </body>
+</html>

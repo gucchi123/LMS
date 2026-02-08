@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ログイン - LMS</title>
+    {% include 'ga4_tracking.html' %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -64,19 +65,47 @@
             <button type="submit" class="btn btn-primary w-100">ログイン</button>
         </form>
         
-        <div class="mt-4 p-3 bg-light rounded">
-            <small class="text-muted">
-                <strong>デモアカウント:</strong><br>
-                管理者: <code>admin / admin123</code><br>
-                <hr class="my-2">
-                <strong>業種別アカウント (パスワード: user123)</strong><br>
-                🏨 宿泊: <code>hotel_tanaka</code> / <code>ryokan_suzuki</code><br>
-                🏪 小売: <code>retail_yamada</code> / <code>shop_sato</code><br>
-                🍽️ 飲食: <code>restaurant_ito</code><br>
-                💗 介護: <code>care_watanabe</code><br>
-                🏥 医療: <code>medical_takahashi</code><br>
-                🎓 教育: <code>edu_kobayashi</code>
-            </small>
+        <div class="mt-4 p-3 bg-light rounded" style="font-size: 0.85rem;">
+            <strong>デモアカウント:</strong>
+            
+            <div class="mt-2 p-2 rounded" style="background: #e8f0fe;">
+                <strong style="color: #1a73e8;">🔑 楽天管理者（全権限）</strong><br>
+                <code>admin</code> / <code>admin123</code>
+            </div>
+
+            <div class="mt-2 p-2 rounded" style="background: #fef7e0;">
+                <strong style="color: #e8710a;">🏢 各社管理者</strong>
+                <small class="text-muted">（パスワード: user123）</small>
+                <table class="mt-1 mb-0" style="width:100%; font-size: 0.85rem;">
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【宿泊】</td><td>グランドホテル東京: <code>hotel_tanaka</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【宿泊】</td><td>湯元旅館: <code>ryokan_admin</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【小売】</td><td>スーパーマート: <code>retail_yamada</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【小売】</td><td>ファッションストア: <code>fashion_admin</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【飲食】</td><td>さくらレストラン: <code>sakura_admin</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【介護】</td><td>スマイルケアセンター: <code>care_admin</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【医療】</td><td>セントラルクリニック: <code>medical_admin</code></td></tr>
+                    <tr><td style="color:#e8710a; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【教育】</td><td>ブライトアカデミー: <code>edu_admin</code></td></tr>
+                </table>
+            </div>
+
+            <div class="mt-2 p-2 rounded" style="background: #f0f4f0;">
+                <strong style="color: #555;">👤 一般ユーザー</strong>
+                <small class="text-muted">（パスワード: user123）</small>
+                <table class="mt-1 mb-0" style="width:100%; font-size: 0.85rem;">
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【宿泊】</td><td>湯元旅館: <code>ryokan_suzuki</code></td></tr>
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【小売】</td><td>ファッションストア: <code>shop_sato</code></td></tr>
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【飲食】</td><td>さくらレストラン: <code>restaurant_ito</code></td></tr>
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【介護】</td><td>スマイルケアセンター: <code>care_watanabe</code></td></tr>
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【医療】</td><td>セントラルクリニック: <code>medical_takahashi</code></td></tr>
+                    <tr><td style="color:#555; font-weight:600; white-space:nowrap; padding:2px 6px 2px 0;">【教育】</td><td>ブライトアカデミー: <code>edu_kobayashi</code></td></tr>
+                </table>
+            </div>
+
+            <div class="mt-2">
+                <small class="text-muted">
+                    <strong>対象業種:</strong> 宿泊 / 小売 / 飲食 / 介護 / 医療 / 教育
+                </small>
+            </div>
         </div>
     </div>
 
@@ -100,7 +129,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = data.is_admin ? '/admin' : '/courses';
+                    const isAdmin = data.is_admin || data.role === 'super_admin' || data.role === 'company_admin';
+                    window.location.href = isAdmin ? '/admin' : '/courses';
                 } else {
                     errorAlert.textContent = 'ユーザー名またはパスワードが正しくありません';
                     errorAlert.style.display = 'block';

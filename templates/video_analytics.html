@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動画視聴分析 - LMS</title>
+    {% include 'ga4_tracking.html' %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        body { background-color: #f8f9fa; }
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        .stat-card { 
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+        .stat-card .stat-label { color: #6c757d; font-size: 0.85rem; }
+        .chart-container { 
+            background: #fff; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .progress-bar-cell {
+            min-width: 120px;
+        }
+        .badge-viewers { background-color: #667eea; }
+        .badge-completed { background-color: #2a9d8f; }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーション -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/courses">
+                <i class="bi bi-mortarboard-fill"></i> Rakuten AI for Business トレーニング
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3"><i class="bi bi-person-circle"></i> {{ session.get('username', '') }}</span>
+                <a href="/admin" class="btn btn-outline-light btn-sm me-2"><i class="bi bi-gear me-1"></i>管理画面</a>
+                <a href="/admin/user-progress" class="btn btn-outline-light btn-sm me-2"><i class="bi bi-people-fill me-1"></i>ユーザー視聴状況</a>
+                <a href="/admin/video-analytics" class="btn btn-light btn-sm me-2"><i class="bi bi-camera-video me-1"></i>動画視聴分析</a>
+                <a href="/admin/analytics" class="btn btn-outline-light btn-sm me-2"><i class="bi bi-graph-up me-1"></i>アクセス分析</a>
+                <a href="/my-progress" class="btn btn-outline-light btn-sm me-2"><i class="bi bi-graph-up-arrow me-1"></i>マイ視聴状況</a>
+                <a href="/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i>ログアウト</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-camera-video me-2"></i>動画視聴分析ダッシュボード</h2>
+            <div>
+                <select id="periodSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                    <option value="7">過去7日</option>
+                    <option value="30" selected>過去30日</option>
+                    <option value="90">過去90日</option>
+                    <option value="365">過去1年</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 概要カード -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-primary" id="totalVideos">-</div>
+                        <div class="stat-label"><i class="bi bi-film me-1"></i>総動画数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-success" id="totalViewers">-</div>
+                        <div class="stat-label"><i class="bi bi-people me-1"></i>視聴ユーザー数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-info" id="avgProgress">-</div>
+                        <div class="stat-label"><i class="bi bi-speedometer me-1"></i>平均進捗率</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-warning" id="completionRate">-</div>
+                        <div class="stat-label"><i class="bi bi-check-circle me-1"></i>全体完了率</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 日別視聴アクティビティ -->
+            <div class="col-md-8">
+                <div class="chart-container">
+                    <h5><i class="bi bi-bar-chart me-2"></i>日別視聴アクティビティ</h5>
+                    <canvas id="dailyChart" height="80"></canvas>
+                </div>
+            </div>
+            <!-- 部署別完了率 -->
+            <div class="col-md-4">
+                <div class="chart-container">
+                    <h5><i class="bi bi-building me-2"></i>部署別 平均進捗率</h5>
+                    <canvas id="deptChart" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 動画別ランキング -->
+            <div class="col-md-7">
+                <div class="table-container">
+                    <h5><i class="bi bi-trophy me-2"></i>動画別 視聴状況</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>動画タイトル</th>
+                                    <th>カテゴリー</th>
+                                    <th>視聴者数</th>
+                                    <th>平均進捗</th>
+                                    <th>完了数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="videoTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- ユーザー別ランキング -->
+            <div class="col-md-5">
+                <div class="table-container">
+                    <h5><i class="bi bi-person-lines-fill me-2"></i>ユーザー別 視聴ランキング</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>ユーザー</th>
+                                    <th>完了数</th>
+                                    <th>平均進捗</th>
+                                    <th>累計時間</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let dailyChart = null;
+        let deptChart = null;
+
+        function progressColor(pct) {
+            if (pct >= 90) return '#2a9d8f';
+            if (pct >= 50) return '#f4a261';
+            if (pct >= 25) return '#667eea';
+            return '#e9ecef';
+        }
+
+        async function loadVideoAnalytics() {
+            const days = document.getElementById('periodSelect').value;
+            
+            try {
+                const res = await fetch(`/api/admin/video-analytics/summary?days=${days}`);
+                const data = await res.json();
+
+                // 概要カード
+                document.getElementById('totalVideos').textContent = data.summary.total_videos;
+                document.getElementById('totalViewers').textContent = data.summary.total_viewers;
+                document.getElementById('avgProgress').textContent = data.summary.overall_avg_progress + '%';
+                document.getElementById('completionRate').textContent = data.summary.overall_completion_rate + '%';
+
+                // 日別チャート
+                if (dailyChart) dailyChart.destroy();
+                const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+                dailyChart = new Chart(dailyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.daily_activity.map(d => d.date),
+                        datasets: [
+                            {
+                                label: '視聴イベント数',
+                                data: data.daily_activity.map(d => d.view_events),
+                                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'アクティブユーザー数',
+                                data: data.daily_activity.map(d => d.active_users),
+                                type: 'line',
+                                borderColor: '#2a9d8f',
+                                backgroundColor: 'rgba(42, 157, 143, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: {
+                            y: { beginAtZero: true, position: 'left', title: { display: true, text: '視聴イベント' }, ticks: { stepSize: 1 } },
+                            y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'ユーザー数' }, grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } },
+                            x: { ticks: { maxRotation: 45 } }
+                        }
+                    }
+                });
+
+                // 部署別チャート
+                if (deptChart) deptChart.destroy();
+                const filteredDepts = data.dept_stats.filter(d => d.user_count > 0);
+                if (filteredDepts.length > 0) {
+                    const deptCtx = document.getElementById('deptChart').getContext('2d');
+                    const deptLabels = filteredDepts.map(d => d.tenant_name ? `${d.department_name}\n(${d.tenant_name})` : d.department_name);
+                    const deptProgress = filteredDepts.map(d => Math.round(d.avg_progress));
+                    const deptColors = deptProgress.map(p => progressColor(p));
+                    
+                    deptChart = new Chart(deptCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: deptLabels,
+                            datasets: [{
+                                label: '平均進捗率 (%)',
+                                data: deptProgress,
+                                backgroundColor: deptColors,
+                                borderRadius: 6,
+                                barThickness: 24
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('deptChart').parentElement.innerHTML += '<p class="text-muted text-center mt-3">部署に紐づく視聴データがまだありません</p>';
+                }
+
+                // 動画テーブル
+                const videoBody = document.getElementById('videoTable');
+                if (data.video_stats.length === 0) {
+                    videoBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">動画がまだ登録されていません</td></tr>';
+                } else {
+                    videoBody.innerHTML = data.video_stats.map((v, i) => {
+                        const avgProg = Math.round(v.avg_progress);
+                        return `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td><strong>${v.title}</strong></td>
+                                <td><small class="text-muted">${v.category_name || '-'}</small></td>
+                                <td><span class="badge badge-viewers">${v.viewer_count}</span></td>
+                                <td class="progress-bar-cell">
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" style="width: ${avgProg}%; background-color: ${progressColor(avgProg)};"></div>
+                                    </div>
+                                    <small class="text-muted">${avgProg}%</small>
+                                </td>
+                                <td><span class="badge badge-completed">${v.completed_count}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // ユーザーテーブル
+                const userBody = document.getElementById('userTable');
+                if (data.user_stats.length === 0) {
+                    userBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">視聴データがまだありません</td></tr>';
+                } else {
+                    userBody.innerHTML = data.user_stats.map((u, i) => {
+                        const avgProg = Math.round(u.avg_progress);
+                        return `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>
+                                    <strong>${u.username}</strong>
+                                    <br><small class="text-muted">${u.company_name || ''} ${u.department_name ? '/ ' + u.department_name : ''}</small>
+                                </td>
+                                <td><span class="badge badge-completed">${u.videos_completed}</span></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 60px;">
+                                        <div class="progress-bar" style="width: ${avgProg}%; background-color: ${progressColor(avgProg)};"></div>
+                                    </div>
+                                    <small>${avgProg}%</small>
+                                </td>
+                                <td><small>${u.total_watch_display}</small></td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+            } catch (err) {
+                console.error('Video analytics load error:', err);
+            }
+        }
+
+        document.getElementById('periodSelect').addEventListener('change', loadVideoAnalytics);
+        loadVideoAnalytics();
+    </script>
+</body>
+</html>

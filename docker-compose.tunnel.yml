@@ -1,0 +1,32 @@
+# Docker Compose for Cloudflare Tunnel
+# 
+# Usage:
+#   1. Replace YOUR_CLOUDFLARE_TUNNEL_TOKEN with your actual token
+#   2. Run: docker-compose -f docker-compose.tunnel.yml up -d
+#
+# To get your token:
+#   1. Go to https://one.dash.cloudflare.com/
+#   2. Networks > Tunnels > Create a tunnel
+#   3. Select "Cloudflared" and copy the token
+
+version: '3.8'
+
+services:
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-lms-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token YOUR_CLOUDFLARE_TUNNEL_TOKEN
+    # For Windows Docker Desktop, use host.docker.internal to access host services
+    # Configure the tunnel URL in Cloudflare dashboard as: http://host.docker.internal:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+# Notes:
+# - The LMS app runs on the host (not in Docker)
+# - Only the tunnel runs in Docker
+# - Configure routing in Cloudflare dashboard:
+#   - Subdomain: lms (or your choice)
+#   - Domain: your-domain.com
+#   - Service: HTTP
+#   - URL: host.docker.internal:5000

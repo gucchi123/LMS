@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイ視聴状況 - LMS</title>
+    {% include 'ga4_tracking.html' %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --muted-color: #6c757d;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        
+        /* ヒーローセクション */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 0 60px;
+            margin-bottom: -30px;
+        }
+        .hero-section h1 {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .hero-section .subtitle {
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+        
+        /* サマリーカード */
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .summary-card:hover {
+            transform: translateY(-3px);
+        }
+        .summary-card .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .summary-card .stat-label {
+            color: var(--muted-color);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+        .summary-card .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        /* 全体進捗リング */
+        .progress-ring-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 10px;
+        }
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        
+        /* コンテンツカード */
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .content-card h5 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        /* 動画テーブル */
+        .video-table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted-color);
+            border-bottom: 2px solid #e9ecef;
+        }
+        .video-table td {
+            vertical-align: middle;
+            padding: 12px 8px;
+        }
+        .video-table tr:hover {
+            background-color: #f8f9ff;
+        }
+        .video-title-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .video-title-link:hover {
+            color: var(--primary-color);
+        }
+        
+        /* ステータスバッジ */
+        .badge-completed {
+            background-color: var(--success-color);
+            font-size: 0.75rem;
+        }
+        .badge-in-progress {
+            background-color: var(--warning-color);
+            color: #333;
+            font-size: 0.75rem;
+        }
+        .badge-not-started {
+            background-color: #e9ecef;
+            color: var(--muted-color);
+            font-size: 0.75rem;
+        }
+        
+        /* カテゴリー進捗カード */
+        .category-progress-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .category-progress-item:last-child {
+            border-bottom: none;
+        }
+        .category-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .category-meta {
+            font-size: 0.8rem;
+            color: var(--muted-color);
+        }
+        
+        /* 最近のアクティビティ */
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 0.9rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .activity-text {
+            flex: 1;
+        }
+        .activity-text .title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .activity-text .meta {
+            font-size: 0.75rem;
+            color: var(--muted-color);
+        }
+        
+        /* フィルター */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .filter-bar select, .filter-bar input {
+            font-size: 0.85rem;
+        }
+        
+        /* モチベーションメッセージ */
+        .motivation-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .motivation-banner .emoji {
+            font-size: 2rem;
+        }
+        .motivation-banner .message {
+            font-weight: 600;
+        }
+        .motivation-banner .sub-message {
+            opacity: 0.85;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/courses">
+                <i class="bi bi-mortarboard-fill"></i> Rakuten AI for Business トレーニング
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ session.username }}
+                    {% if session.industry_name %}
+                    <small class="ms-1 opacity-75">[{{ session.industry_name }}]</small>
+                    {% endif %}
+                    {% if session.company_name %}
+                    <small class="ms-1 opacity-75">{{ session.company_name }}</small>
+                    {% endif %}
+                </span>
+                <a href="/courses" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-grid"></i> コース
+                </a>
+                <a href="/chat" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-chat-dots"></i> AIアシスタント
+                </a>
+                {% if session.role in ['super_admin', 'company_admin'] or session.is_admin %}
+                <a href="/admin/video-analytics" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-bar-chart"></i> 全体分析
+                </a>
+                <a href="/admin/user-progress" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-people-fill"></i> ユーザー視聴状況
+                </a>
+                <a href="/admin" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-gear"></i> 管理画面
+                </a>
+                {% endif %}
+                <a href="/dashboard" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-collection-play"></i> 全動画
+                </a>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> ログアウト
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ヒーローセクション -->
+    <div class="hero-section">
+        <div class="container">
+            <h1><i class="bi bi-graph-up-arrow"></i> マイ視聴状況</h1>
+            <p class="subtitle">あなたの学習進捗をひと目で確認できます</p>
+        </div>
+    </div>
+
+    <div class="container" style="position: relative; z-index: 10;">
+        <!-- ローディング -->
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">データを読み込んでいます...</p>
+        </div>
+
+        <!-- メインコンテンツ（JS読み込み後表示） -->
+        <div id="mainContent" style="display: none;">
+
+            <!-- モチベーションメッセージ -->
+            <div id="motivationBanner" class="motivation-banner" style="display: none;">
+                <span class="emoji" id="motivationEmoji"></span>
+                <div>
+                    <div class="message" id="motivationMessage"></div>
+                    <div class="sub-message" id="motivationSubMessage"></div>
+                </div>
+            </div>
+
+            <!-- サマリーカード -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="summary-card">
+                        <div class="stat-icon text-primary"><i class="bi bi-collection-play-fill"></i></div>
+                        <div class="stat-number text-primary" id="totalVideos">-</div>
+                        <div class="stat-label">対象動画数</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-card">
+                        <div class="stat-icon text-warning"><i class="bi bi-play-circle-fill"></i></div>
+                        <div class="stat-number text-warning" id="videosStarted">-</div>
+                        <div class="stat-label">視聴開始済み</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-card">
+                        <div class="stat-icon text-success"><i class="bi bi-check-circle-fill"></i></div>
+                        <div class="stat-number text-success" id="videosCompleted">-</div>
+                        <div class="stat-label">視聴完了</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="summary-card">
+                        <div class="progress-ring-container">
+                            <canvas id="progressRing" width="120" height="120"></canvas>
+                            <div class="progress-ring-text" id="avgProgressText">-</div>
+                        </div>
+                        <div class="stat-label">全体進捗率</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 左カラム -->
+                <div class="col-lg-8">
+                    <!-- 動画一覧 -->
+                    <div class="content-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0"><i class="bi bi-list-check"></i> 動画一覧・視聴進捗</h5>
+                        </div>
+                        <div class="filter-bar">
+                            <select id="categoryFilter" class="form-select form-select-sm" style="max-width: 200px;">
+                                <option value="">すべてのカテゴリー</option>
+                            </select>
+                            <select id="statusFilter" class="form-select form-select-sm" style="max-width: 160px;">
+                                <option value="">全ステータス</option>
+                                <option value="completed">✅ 完了</option>
+                                <option value="in_progress">▶️ 視聴中</option>
+                                <option value="not_started">⬜ 未視聴</option>
+                            </select>
+                            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="動画を検索..." style="max-width: 200px;">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table video-table">
+                                <thead>
+                                    <tr>
+                                        <th>動画タイトル</th>
+                                        <th style="width:100px">カテゴリー</th>
+                                        <th style="width:160px">進捗</th>
+                                        <th style="width:80px">ステータス</th>
+                                        <th style="width:80px">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="videoTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="noResults" class="text-center text-muted py-3" style="display:none;">
+                            <i class="bi bi-search"></i> 条件に一致する動画がありません
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右カラム -->
+                <div class="col-lg-4">
+                    <!-- カテゴリー別進捗 -->
+                    <div class="content-card">
+                        <h5><i class="bi bi-folder2-open"></i> カテゴリー別進捗</h5>
+                        <div id="categoryProgressList">
+                        </div>
+                    </div>
+
+                    <!-- 完了状況チャート -->
+                    <div class="content-card">
+                        <h5><i class="bi bi-pie-chart-fill"></i> 完了状況</h5>
+                        <canvas id="completionChart" height="200"></canvas>
+                    </div>
+
+                    <!-- 最近のアクティビティ -->
+                    <div class="content-card">
+                        <h5><i class="bi bi-clock-history"></i> 最近の視聴</h5>
+                        <div id="recentActivity">
+                            <p class="text-muted text-center py-3">まだ視聴履歴がありません</p>
+                        </div>
+                    </div>
+
+                    <!-- マイQ&A -->
+                    <div class="content-card">
+                        <h5><i class="bi bi-chat-square-text"></i> Q&A</h5>
+                        <ul class="nav nav-tabs mb-3" id="myQaTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="myq-tab" data-bs-toggle="tab" data-bs-target="#myq-pane" 
+                                        type="button" role="tab">
+                                    <i class="bi bi-question-circle"></i> 自分の質問 <span class="badge bg-primary" id="myQCount" style="display:none;">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="mya-tab" data-bs-toggle="tab" data-bs-target="#mya-pane" 
+                                        type="button" role="tab">
+                                    <i class="bi bi-reply"></i> 自分の回答 <span class="badge bg-success" id="myACount" style="display:none;">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tenant-qa-tab" data-bs-toggle="tab" data-bs-target="#tenant-qa-pane" 
+                                        type="button" role="tab">
+                                    <i class="bi bi-building"></i> 社内Q&A <span class="badge bg-info" id="tenantQCount" style="display:none;">0</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="myq-pane" role="tabpanel">
+                                <div id="myQuestionsList">
+                                    <p class="text-muted text-center py-3">読み込み中...</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="mya-pane" role="tabpanel">
+                                <div id="myAnswersList">
+                                    <p class="text-muted text-center py-3">読み込み中...</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tenant-qa-pane" role="tabpanel">
+                                <p class="text-muted small mb-2"><i class="bi bi-info-circle"></i> 同じ会社のメンバーが投稿したQ&Aです</p>
+                                <div id="tenantQAList">
+                                    <p class="text-muted text-center py-3">読み込み中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allData = null;
+        let progressRingChart = null;
+        let completionChart = null;
+
+        function progressColor(pct) {
+            if (pct >= 90) return '#28a745';
+            if (pct >= 50) return '#667eea';
+            if (pct > 0) return '#ffc107';
+            return '#dee2e6';
+        }
+
+        function statusBadge(status) {
+            if (status === 'completed') return '<span class="badge badge-completed"><i class="bi bi-check-circle"></i> 完了</span>';
+            if (status === 'in_progress') return '<span class="badge badge-in-progress"><i class="bi bi-play-circle"></i> 視聴中</span>';
+            return '<span class="badge badge-not-started"><i class="bi bi-circle"></i> 未視聴</span>';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return dateStr.split('.')[0];
+            return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
+        function getMotivation(summary) {
+            const pct = summary.avg_progress;
+            const completed = summary.videos_completed;
+            const total = summary.total_videos;
+            
+            if (total === 0) return null;
+            
+            if (summary.all_completed) {
+                return { emoji: '🎉', message: 'すべての動画を完了しました！', sub: '素晴らしい！引き続き新しいコンテンツをお楽しみください。' };
+            } else if (pct >= 75) {
+                return { emoji: '🔥', message: `あと少し！${total - completed}本で完了です`, sub: 'この調子で頑張りましょう！' };
+            } else if (pct >= 50) {
+                return { emoji: '💪', message: '半分以上クリアしました！', sub: `残り${total - completed}本です。コツコツ進めていきましょう。` };
+            } else if (pct > 0) {
+                return { emoji: '📚', message: '学習を進めています！', sub: `${completed}本完了しました。自分のペースで続けましょう。` };
+            } else {
+                return { emoji: '👋', message: 'さあ、学習を始めましょう！', sub: `${total}本の動画があなたを待っています。` };
+            }
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/my-progress');
+                if (!res.ok) throw new Error('API error');
+                allData = await res.json();
+                
+                renderSummary(allData.summary);
+                renderProgressRing(allData.summary.avg_progress);
+                renderMotivation(allData.summary);
+                renderVideoTable(allData.videos);
+                renderCategoryProgress(allData.category_stats);
+                renderCompletionChart(allData.summary);
+                renderRecentActivity(allData.recent_activity);
+                populateCategoryFilter(allData.videos);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            } catch (err) {
+                console.error('Load error:', err);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> データの読み込みに失敗しました。</div>';
+            }
+        }
+
+        function renderSummary(summary) {
+            document.getElementById('totalVideos').textContent = summary.total_videos;
+            document.getElementById('videosStarted').textContent = summary.videos_started;
+            document.getElementById('videosCompleted').textContent = summary.videos_completed;
+            document.getElementById('avgProgressText').textContent = Math.round(summary.avg_progress) + '%';
+        }
+
+        function renderProgressRing(pct) {
+            const ctx = document.getElementById('progressRing').getContext('2d');
+            if (progressRingChart) progressRingChart.destroy();
+            
+            const color = progressColor(pct);
+            progressRingChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [pct, 100 - pct],
+                        backgroundColor: [color, '#f0f0f0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '78%',
+                    responsive: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { duration: 1200, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function renderMotivation(summary) {
+            const m = getMotivation(summary);
+            if (!m) return;
+            const banner = document.getElementById('motivationBanner');
+            document.getElementById('motivationEmoji').textContent = m.emoji;
+            document.getElementById('motivationMessage').textContent = m.message;
+            document.getElementById('motivationSubMessage').textContent = m.sub;
+            banner.style.display = 'flex';
+        }
+
+        function renderVideoTable(videos) {
+            const catFilter = document.getElementById('categoryFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = videos.filter(v => {
+                if (catFilter && (v.category_name || '') !== catFilter) return false;
+                if (statusFilter && v.status !== statusFilter) return false;
+                if (search && !v.title.toLowerCase().includes(search)) return false;
+                return true;
+            });
+            
+            const tbody = document.getElementById('videoTableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+            noResults.style.display = 'none';
+            
+            tbody.innerHTML = filtered.map(v => {
+                const pct = Math.round(v.progress_percent);
+                const color = progressColor(pct);
+                const slug = v.id; // fallback to id
+                return `<tr>
+                    <td>
+                        <a href="/watch/${slug}" class="video-title-link">${v.title}</a>
+                    </td>
+                    <td><small class="text-muted">${v.category_name || '-'}</small></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar" style="width: ${pct}%; background-color: ${color};"></div>
+                            </div>
+                            <small style="color: ${color}; font-weight: 600; min-width: 35px;">${pct}%</small>
+                        </div>
+                    </td>
+                    <td>${statusBadge(v.status)}</td>
+                    <td>
+                        <a href="/watch/${slug}" class="btn btn-sm ${pct > 0 && pct < 90 ? 'btn-primary' : 'btn-outline-primary'}">
+                            <i class="bi bi-play-fill"></i>
+                            ${pct > 0 && pct < 90 ? '続き' : '視聴'}
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderCategoryProgress(categoryStats) {
+            const container = document.getElementById('categoryProgressList');
+            if (!categoryStats || categoryStats.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center py-3">カテゴリーデータがありません</p>';
+                return;
+            }
+            
+            container.innerHTML = categoryStats.map(cat => {
+                const pct = Math.round(cat.avg_progress);
+                const color = progressColor(pct);
+                return `
+                    <div class="category-progress-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="category-name">${cat.name}</span>
+                            <span style="color: ${color}; font-weight: 600; font-size: 0.85rem;">${pct}%</span>
+                        </div>
+                        <div class="progress mb-1" style="height: 6px;">
+                            <div class="progress-bar" style="width: ${pct}%; background-color: ${color};"></div>
+                        </div>
+                        <div class="category-meta">
+                            ${cat.completed}/${cat.total} 完了
+                            ${cat.started > cat.completed ? ` ・ ${cat.started - cat.completed} 視聴中` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCompletionChart(summary) {
+            const ctx = document.getElementById('completionChart').getContext('2d');
+            if (completionChart) completionChart.destroy();
+            
+            const completed = summary.videos_completed;
+            const inProgress = summary.videos_started - summary.videos_completed;
+            const notStarted = summary.total_videos - summary.videos_started;
+            
+            completionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['完了', '視聴中', '未視聴'],
+                    datasets: [{
+                        data: [completed, inProgress, notStarted],
+                        backgroundColor: ['#28a745', '#ffc107', '#e9ecef'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 12, usePointStyle: true, font: { size: 12 } }
+                        }
+                    },
+                    animation: { duration: 1000 }
+                }
+            });
+        }
+
+        function renderRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-clock"></i> まだ視聴履歴がありません</p>';
+                return;
+            }
+            
+            container.innerHTML = activities.map(a => {
+                const pct = Math.round(a.progress_percent);
+                const bgColor = pct >= 90 ? '#28a745' : (pct >= 50 ? '#667eea' : '#ffc107');
+                const icon = pct >= 90 ? 'bi-check-lg' : 'bi-play-fill';
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background-color: ${bgColor};">
+                            <i class="bi ${icon}"></i>
+                        </div>
+                        <div class="activity-text">
+                            <div class="title">${a.title}</div>
+                            <div class="meta">${formatDate(a.updated_at)} ・ ${pct}%完了</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateCategoryFilter(videos) {
+            const categories = [...new Set(videos.map(v => v.category_name).filter(Boolean))];
+            const select = document.getElementById('categoryFilter');
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+        }
+
+        // フィルターイベント
+        document.getElementById('categoryFilter').addEventListener('change', () => renderVideoTable(allData.videos));
+        document.getElementById('statusFilter').addEventListener('change', () => renderVideoTable(allData.videos));
+        document.getElementById('searchInput').addEventListener('input', () => renderVideoTable(allData.videos));
+
+        // ページ読み込み
+        loadData();
+        loadMyQA();
+
+        // マイQ&Aを読み込み
+        async function loadMyQA() {
+            try {
+                const response = await fetch('/api/my-questions');
+                const data = await response.json();
+                
+                if (!data.success) return;
+                
+                // 自分の質問
+                const qList = document.getElementById('myQuestionsList');
+                const qCount = document.getElementById('myQCount');
+                if (data.my_questions.length > 0) {
+                    qCount.textContent = data.my_questions.length;
+                    qCount.style.display = 'inline';
+                    qList.innerHTML = data.my_questions.map(q => `
+                        <div class="border rounded p-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex:1;">
+                                    <a href="/watch/${q.video_slug}#qa" class="text-decoration-none fw-bold">
+                                        <i class="bi bi-play-circle"></i> ${escapeHtmlMP(q.video_title)}
+                                    </a>
+                                    <p class="mb-0 mt-1 text-dark">${escapeHtmlMP(q.question_text)}</p>
+                                </div>
+                                <div class="text-end ms-2" style="white-space:nowrap;">
+                                    <span class="badge ${q.answer_count > 0 ? 'bg-success' : 'bg-warning text-dark'}">
+                                        ${q.answer_count} 回答
+                                    </span>
+                                    <div class="text-muted small mt-1">${formatDateMP(q.created_at)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    qList.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-chat-dots"></i> まだ質問を投稿していません</p>';
+                }
+                
+                // 自分の回答
+                const aList = document.getElementById('myAnswersList');
+                const aCount = document.getElementById('myACount');
+                if (data.my_answers.length > 0) {
+                    aCount.textContent = data.my_answers.length;
+                    aCount.style.display = 'inline';
+                    aList.innerHTML = data.my_answers.map(a => `
+                        <div class="border rounded p-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex:1;">
+                                    <a href="/watch/${a.video_slug}#qa" class="text-decoration-none fw-bold">
+                                        <i class="bi bi-play-circle"></i> ${escapeHtmlMP(a.video_title)}
+                                    </a>
+                                    <p class="mb-1 small text-muted">
+                                        <i class="bi bi-question-circle"></i> ${escapeHtmlMP(a.question_author)}の質問: ${escapeHtmlMP(a.question_text)}
+                                    </p>
+                                    <p class="mb-0 text-dark"><i class="bi bi-reply"></i> ${escapeHtmlMP(a.answer_text)}</p>
+                                </div>
+                                <div class="text-end ms-2" style="white-space:nowrap;">
+                                    <div class="text-muted small">${formatDateMP(a.created_at)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    aList.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-reply"></i> まだ回答を投稿していません</p>';
+                }
+
+                // 社内Q&A（同テナントのメンバーのQ&A）
+                const tList = document.getElementById('tenantQAList');
+                const tCount = document.getElementById('tenantQCount');
+                const tenantQs = data.tenant_questions || [];
+                if (tenantQs.length > 0) {
+                    tCount.textContent = tenantQs.length;
+                    tCount.style.display = 'inline';
+                    tList.innerHTML = tenantQs.map(q => {
+                        // 回答一覧を生成
+                        let answersHtml = '';
+                        if (q.answers && q.answers.length > 0) {
+                            answersHtml = q.answers.map(a => `
+                                <div class="ms-3 mt-1 ps-2 border-start border-2 ${a.is_admin_answer ? 'border-warning' : 'border-primary'}">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge ${a.is_admin_answer ? 'bg-warning text-dark' : 'bg-light text-dark'} me-1" style="font-size:0.7em;">
+                                            ${a.is_admin_answer ? '👑 管理者' : '👤 ' + escapeHtmlMP(a.author)}
+                                        </span>
+                                        <span class="text-muted small">${formatDateMP(a.created_at)}</span>
+                                    </div>
+                                    <p class="mb-0 small mt-1">${escapeHtmlMP(a.answer_text)}</p>
+                                </div>
+                            `).join('');
+                        }
+                        return `
+                            <div class="border rounded p-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div style="flex:1;">
+                                        <a href="/watch/${q.video_slug}#qa" class="text-decoration-none fw-bold">
+                                            <i class="bi bi-play-circle"></i> ${escapeHtmlMP(q.video_title)}
+                                        </a>
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-dark me-1" style="font-size:0.75em;">
+                                                <i class="bi bi-person"></i> ${escapeHtmlMP(q.author)}
+                                            </span>
+                                            <span class="text-muted small">${formatDateMP(q.created_at)}</span>
+                                        </div>
+                                        <p class="mb-1 mt-1 text-dark"><i class="bi bi-question-circle text-primary"></i> ${escapeHtmlMP(q.question_text)}</p>
+                                        ${answersHtml}
+                                        ${q.answer_count === 0 ? '<span class="badge bg-warning text-dark small mt-1"><i class="bi bi-clock"></i> 未回答</span>' : ''}
+                                    </div>
+                                    <div class="text-end ms-2" style="white-space:nowrap;">
+                                        <span class="badge ${q.answer_count > 0 ? 'bg-success' : 'bg-warning text-dark'}">
+                                            ${q.answer_count} 回答
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    tList.innerHTML = '<p class="text-muted text-center py-3"><i class="bi bi-building"></i> 社内メンバーからの質問はまだありません</p>';
+                }
+            } catch (error) {
+                console.error('マイQ&A読み込みエラー:', error);
+            }
+        }
+
+        function escapeHtmlMP(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+
+        function formatDateMP(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('ja-JP');
+        }
+    </script>
+    
+    {% include 'chat_widget.html' %}
+</body>
+</html>

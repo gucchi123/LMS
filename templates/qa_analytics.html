@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A分析 - LMS</title>
+    {% include 'ga4_tracking.html' %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        body { background-color: #f8f9fa; }
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        .stat-card { 
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+        .stat-card .stat-label { color: #6c757d; font-size: 0.85rem; }
+        .chart-container { 
+            background: #fff; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .badge-questions { background-color: #667eea; }
+        .badge-answers { background-color: #2a9d8f; }
+        .badge-unanswered { background-color: #e76f51; }
+        .question-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin">
+                <i class="bi bi-chat-square-text"></i> Q&A分析
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ session.username }}
+                    <span class="badge bg-light text-dark ms-1">{{ session.role or 'admin' }}</span>
+                </span>
+                <a href="/admin" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-gear"></i> 管理画面
+                </a>
+                <a href="/admin/video-analytics" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-camera-video"></i> 動画視聴分析
+                </a>
+                <a href="/admin/user-progress" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-people-fill"></i> ユーザー視聴状況
+                </a>
+                <a href="/dashboard" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-house"></i> ホーム
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 統計カード -->
+        <div class="row g-3 mb-4" id="statCards">
+            <div class="col-md-3">
+                <div class="card stat-card text-center p-3">
+                    <div class="stat-value text-primary" id="totalQuestions">-</div>
+                    <div class="stat-label"><i class="bi bi-question-circle"></i> 総質問数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card text-center p-3">
+                    <div class="stat-value text-success" id="totalAnswers">-</div>
+                    <div class="stat-label"><i class="bi bi-reply"></i> 総回答数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card text-center p-3">
+                    <div class="stat-value text-danger" id="unansweredCount">-</div>
+                    <div class="stat-label"><i class="bi bi-exclamation-circle"></i> 未回答</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card text-center p-3">
+                    <div class="stat-value text-info" id="answerRate">-</div>
+                    <div class="stat-label"><i class="bi bi-check-circle"></i> 回答率</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- 日別Q&Aアクティビティ -->
+            <div class="col-lg-8">
+                <div class="chart-container">
+                    <h5><i class="bi bi-graph-up"></i> 日別Q&Aアクティビティ（過去30日）</h5>
+                    <canvas id="dailyChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- テナント別統計（super_adminのみ） -->
+            <div class="col-lg-4" id="tenantStatsContainer" style="display:none;">
+                <div class="chart-container">
+                    <h5><i class="bi bi-building"></i> テナント別Q&A</h5>
+                    <canvas id="tenantChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <!-- 動画別Q&Aランキング -->
+            <div class="col-lg-6">
+                <div class="table-container">
+                    <h5><i class="bi bi-camera-video"></i> 動画別 Q&Aランキング</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="videoRankingTable">
+                            <thead>
+                                <tr>
+                                    <th>動画</th>
+                                    <th class="text-center">質問数</th>
+                                    <th class="text-center">回答数</th>
+                                    <th class="text-center">未回答</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ユーザー別Q&A統計 -->
+            <div class="col-lg-6">
+                <div class="table-container">
+                    <h5><i class="bi bi-people"></i> ユーザー別 Q&A統計</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="userStatsTable">
+                            <thead>
+                                <tr>
+                                    <th>ユーザー</th>
+                                    <th>会社</th>
+                                    <th class="text-center">質問数</th>
+                                    <th class="text-center">回答数</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 未回答の質問一覧 -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="table-container">
+                    <h5><i class="bi bi-exclamation-triangle text-warning"></i> 未回答の質問</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="unansweredTable">
+                            <thead>
+                                <tr>
+                                    <th>動画</th>
+                                    <th>質問内容</th>
+                                    <th>投稿者</th>
+                                    <th>テナント</th>
+                                    <th>投稿日</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div id="noUnanswered" class="text-center text-muted py-3" style="display:none;">
+                        <i class="bi bi-check-circle" style="font-size:2rem;color:#2a9d8f;"></i>
+                        <p class="mt-2">未回答の質問はありません</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const currentRole = '{{ session.role | default("user") }}';
+        let dailyChartInstance = null;
+        let tenantChartInstance = null;
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/admin/qa-analytics/summary');
+                const data = await response.json();
+
+                // 統計カード
+                document.getElementById('totalQuestions').textContent = data.summary.total_questions;
+                document.getElementById('totalAnswers').textContent = data.summary.total_answers;
+                document.getElementById('unansweredCount').textContent = data.summary.unanswered;
+                document.getElementById('answerRate').textContent = data.summary.answer_rate + '%';
+
+                // 日別チャート
+                renderDailyChart(data.daily_activity);
+
+                // 動画ランキング
+                renderVideoRanking(data.video_ranking);
+
+                // ユーザー統計
+                renderUserStats(data.user_stats);
+
+                // 未回答質問
+                renderUnansweredQuestions(data.unanswered_questions);
+
+                // テナント統計（super_adminのみ）
+                if (currentRole === 'super_admin' && data.tenant_stats && data.tenant_stats.length > 0) {
+                    document.getElementById('tenantStatsContainer').style.display = 'block';
+                    renderTenantChart(data.tenant_stats);
+                }
+
+            } catch (error) {
+                console.error('Q&A分析データの読み込みに失敗:', error);
+            }
+        }
+
+        function renderDailyChart(daily) {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            if (dailyChartInstance) dailyChartInstance.destroy();
+
+            dailyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: daily.map(d => d.date),
+                    datasets: [
+                        {
+                            label: '質問',
+                            data: daily.map(d => d.questions),
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderColor: '#667eea',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '回答',
+                            data: daily.map(d => d.answers),
+                            backgroundColor: 'rgba(42, 157, 143, 0.7)',
+                            borderColor: '#2a9d8f',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { stacked: false },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+
+        function renderTenantChart(tenants) {
+            const ctx = document.getElementById('tenantChart').getContext('2d');
+            if (tenantChartInstance) tenantChartInstance.destroy();
+
+            tenantChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: tenants.map(t => t.name),
+                    datasets: [{
+                        data: tenants.map(t => t.question_count),
+                        backgroundColor: [
+                            '#667eea', '#2a9d8f', '#e76f51', '#f4a261', '#264653',
+                            '#e9c46a', '#a8dadc', '#457b9d', '#1d3557', '#d62828'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderVideoRanking(videos) {
+            const tbody = document.querySelector('#videoRankingTable tbody');
+            if (videos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">データがありません</td></tr>';
+                return;
+            }
+            tbody.innerHTML = videos.map(v => `
+                <tr>
+                    <td>
+                        <a href="/watch/${v.slug || v.id}" class="text-decoration-none">
+                            <i class="bi bi-play-circle"></i> ${escapeHtml(v.title)}
+                        </a>
+                    </td>
+                    <td class="text-center"><span class="badge badge-questions">${v.question_count}</span></td>
+                    <td class="text-center"><span class="badge badge-answers">${v.answer_count}</span></td>
+                    <td class="text-center">
+                        ${v.unanswered_count > 0 
+                            ? `<span class="badge badge-unanswered">${v.unanswered_count}</span>` 
+                            : '<span class="badge bg-success">0</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUserStats(users) {
+            const tbody = document.querySelector('#userStatsTable tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">データがありません</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><i class="bi bi-person"></i> ${escapeHtml(u.username)}</td>
+                    <td>${escapeHtml(u.company_name || '')}</td>
+                    <td class="text-center"><span class="badge badge-questions">${u.question_count}</span></td>
+                    <td class="text-center"><span class="badge badge-answers">${u.answer_count}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUnansweredQuestions(questions) {
+            const tbody = document.querySelector('#unansweredTable tbody');
+            const noMsg = document.getElementById('noUnanswered');
+            
+            if (questions.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('unansweredTable').style.display = 'none';
+                noMsg.style.display = 'block';
+                return;
+            }
+            
+            noMsg.style.display = 'none';
+            document.getElementById('unansweredTable').style.display = 'table';
+            
+            tbody.innerHTML = questions.map(q => `
+                <tr>
+                    <td>
+                        <a href="/watch/${q.video_slug}" class="text-decoration-none">
+                            ${escapeHtml(q.video_title)}
+                        </a>
+                    </td>
+                    <td class="question-preview" title="${escapeHtml(q.question_text)}">${escapeHtml(q.question_text)}</td>
+                    <td>${escapeHtml(q.username)}</td>
+                    <td>${escapeHtml(q.tenant_name || '-')}</td>
+                    <td>${formatDate(q.created_at)}</td>
+                    <td>
+                        <a href="/watch/${q.video_slug}#qa" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-reply"></i> 回答する
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('ja-JP');
+        }
+
+        // 初期読み込み
+        loadAnalytics();
+    </script>
+</body>
+</html>

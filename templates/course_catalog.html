@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rakuten AI for Business トレーニング</title>
+    {% include 'ga4_tracking.html' %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -146,6 +147,65 @@
             margin-right: 10px;
             color: var(--primary-color);
         }
+        
+        /* 通知バナー */
+        .announcements-area {
+            margin-bottom: 20px;
+        }
+        .announcement-banner {
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative;
+        }
+        .announcement-banner.type-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196f3;
+        }
+        .announcement-banner.type-warning {
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            border-left: 4px solid #ff9800;
+        }
+        .announcement-banner.type-success {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-left: 4px solid #4caf50;
+        }
+        .announcement-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .type-info .announcement-icon { color: #2196f3; }
+        .type-warning .announcement-icon { color: #ff9800; }
+        .type-success .announcement-icon { color: #4caf50; }
+        .announcement-content { flex: 1; }
+        .announcement-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+        .announcement-text {
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.5;
+        }
+        .announcement-close {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .announcement-close:hover { color: #333; }
     </style>
 </head>
 <body>
@@ -168,7 +228,16 @@
                 <a href="/chat" class="btn btn-outline-light btn-sm me-2">
                     <i class="bi bi-chat-dots"></i> AIアシスタント
                 </a>
-                {% if session.is_admin %}
+                <a href="/my-progress" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-graph-up-arrow"></i> マイ視聴状況
+                </a>
+                {% if session.role in ['super_admin', 'company_admin'] or session.is_admin %}
+                <a href="/admin/user-progress" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-people-fill"></i> ユーザー視聴状況
+                </a>
+                <a href="/admin/video-analytics" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-bar-chart"></i> 全体分析
+                </a>
                 <a href="/admin" class="btn btn-light btn-sm me-2">
                     <i class="bi bi-gear"></i> 管理画面
                 </a>
@@ -193,6 +262,9 @@
 
     <!-- メインコンテンツ -->
     <div class="container" style="position: relative; z-index: 10;">
+        <!-- お知らせバナーエリア -->
+        <div class="announcements-area" id="announcementsArea"></div>
+        
         {% if categories %}
         <div class="row g-4">
             {% for category in categories %}
@@ -243,13 +315,13 @@
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/dashboard" class="quick-link-item">
+                            <a href="/my-progress" class="quick-link-item">
                                 <i class="bi bi-clock-history"></i>
                                 視聴履歴を確認
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/dashboard" class="quick-link-item">
+                            <a href="/chat" class="quick-link-item">
                                 <i class="bi bi-bookmark-star"></i>
                                 おすすめコンテンツ
                             </a>
@@ -261,6 +333,59 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // お知らせバナーを読み込み
+        (async function() {
+            try {
+                const response = await fetch('/api/announcements');
+                const data = await response.json();
+                
+                if (data.success && data.announcements.length > 0) {
+                    const area = document.getElementById('announcementsArea');
+                    const dismissed = JSON.parse(sessionStorage.getItem('dismissedAnnouncements') || '[]');
+                    
+                    let html = '';
+                    data.announcements.forEach(a => {
+                        if (dismissed.includes(a.id)) return;
+                        
+                        const iconMap = {
+                            'info': 'bi-info-circle-fill',
+                            'warning': 'bi-exclamation-triangle-fill',
+                            'success': 'bi-check-circle-fill'
+                        };
+                        const icon = iconMap[a.type] || iconMap['info'];
+                        
+                        html += `
+                            <div class="announcement-banner type-${a.type}" id="announcement-${a.id}">
+                                <i class="bi ${icon} announcement-icon"></i>
+                                <div class="announcement-content">
+                                    <div class="announcement-title">${escapeHtml(a.title)}</div>
+                                    <div class="announcement-text">${escapeHtml(a.content)}</div>
+                                </div>
+                                <button class="announcement-close" onclick="dismissAnnouncement(${a.id})" title="閉じる">&times;</button>
+                            </div>`;
+                    });
+                    area.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('お知らせの読み込みに失敗しました:', error);
+            }
+        })();
+        
+        function dismissAnnouncement(id) {
+            const el = document.getElementById('announcement-' + id);
+            if (el) el.remove();
+            const dismissed = JSON.parse(sessionStorage.getItem('dismissedAnnouncements') || '[]');
+            dismissed.push(id);
+            sessionStorage.setItem('dismissedAnnouncements', JSON.stringify(dismissed));
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
     
     {% include 'chat_widget.html' %}
 </body>

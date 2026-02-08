@@ -400,6 +400,11 @@
         // ウェルカムメッセージを非表示
         chatWidgetWelcome.style.display = 'none';
         
+        // GA4: チャットメッセージ送信イベント
+        if (window.lmsAnalytics) {
+            lmsAnalytics.trackChatMessage();
+        }
+        
         // ユーザーメッセージを表示
         appendWidgetMessage('user', message);
         chatWidgetInput.value = '';
